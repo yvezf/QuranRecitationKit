@@ -1,1 +1,4 @@
-{"url":null,"checksum":null,"note":"Pin the reviewed Release archive with tools/package_swift.py --pin --archive PATH --tag v0.1.0 after configuring the one Rust release owner constant."}
+{
+  "url": "https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/download/v0.1.0/QRKFFI.xcframework.zip",
+  "checksum": "8116b345ca0f1aca43b80430d02e4ccc49028e71c62848656248ac09a22e43ab"
+}
