@@ -24,12 +24,66 @@ jobs:
         run: |
           set -o pipefail
           python model/export/export_clean.py --out candidate 2>&1 | tee candidate/export.log
-      - name: Compare with existing v1 release
+      - name: Record raw non-speech decoder compatibility
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release download model-v1 --pattern fastconformer_full_mixed.onnx --dir baseline
-          python model/export/check_parity.py --v1 baseline/fastconformer_full_mixed.onnx --v2 candidate/candidate-int8.onnx --report candidate/parity.json
+          python model/export/check_parity.py --v1 baseline/fastconformer_full_mixed.onnx --v2 candidate/candidate-mixed.onnx --report candidate/raw-decoder-compatibility.json --report-only
       - uses: actions/upload-artifact@v4
         if: always()
-        with: {name: model-candidate-unvalidated, path: candidate/}
+        with:
+          name: model-export-receipts
+          path: |
+            candidate/*.json
+            candidate/*.txt
+            candidate/*.log
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clean-model-v2-candidate
+          path: |
+            candidate/candidate-mixed.onnx
+            candidate/candidate.json
+            candidate/source.json
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: {name: failed-fp32-export-debug, path: candidate/full-precision.onnx}
+  native-decisions:
+    needs: candidate
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-2022, macos-15, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '14.0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: {name: clean-model-v2-candidate, path: candidate}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with: {workspaces: core}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev pkg-config
+      - if: runner.os != 'macOS' || runner.arch != 'X64'
+        run: pip install onnxruntime==1.24.2
+      - run: python tools/prepare_runtime.py
+      - name: Fetch pinned baseline for comparison
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download model-v1 --pattern fastconformer_full_mixed.onnx --pattern model-manifest.json --dir baseline
+      - run: cargo build --manifest-path core/Cargo.toml -p qrk-cli --example validate_model --release --locked
+      - name: Verify public acceptance and retry decisions
+        shell: bash
+        run: |
+          runner=core/target/release/examples/validate_model
+          if [[ "${{ runner.os }}" == "Windows" ]]; then runner="${runner}.exe"; fi
+          "$runner" --baseline baseline --candidate candidate --report native-validation.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: model-validation-${{ matrix.os }}
+          path: native-validation.json
