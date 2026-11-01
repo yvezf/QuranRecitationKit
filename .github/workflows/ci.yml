@@ -2,7 +2,9 @@ name: Cross-platform CI
 on:
   push:
     branches: [main]
+    paths-ignore: ['**/*.md']
   pull_request:
+    paths-ignore: ['**/*.md']
 permissions:
   contents: read
 jobs:
@@ -52,7 +54,7 @@ jobs:
       - shell: bash
         run: pip install dist/wheels/*.whl && python -m unittest discover -s bindings/python/tests -v
       - run: dotnet build examples/dotnet-console/RecitationDemo.csproj -c Release
-      - name: .NET native smoke (engine version, no model download)
+      - name: .NET native silence smoke (verified model)
         shell: bash
         run: |
           mkdir -p examples/dotnet-console/bin/Release/net8.0

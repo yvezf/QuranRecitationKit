@@ -17,3 +17,7 @@ Await feed calls: the binding copies your PCM, runs inference on a native worker
 Only a verified model pack is accepted. Set `ORT_DYLIB_PATH` for a development runtime or build with the runtime embedded. The root release workflow provides platform builds. The helper/mic example is `examples/node-mic`; applications with their own capture can feed the native binding directly. See `protocol/SIDECAR.md` for `Sidecar` and transport security.
 
 No translation, recitation recording, generated normalized Quran index or model weights are shipped in this npm package. Carry the project/native dependency notices with redistribution.
+
+## GitHub release installation
+
+No npm registry upload has been performed. Clone https://github.com/yvezfscarves-afk/QuranRecitationKit, download the matching `node-<platform>.zip` from https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/tag/v0.1.0, and extract it into `bindings/node` so its `prebuilds/<platform>-<arch>/qrk.node` is present. In your host project run `npm install /path/to/QuranRecitationKit/bindings/node`. The package includes the selected native runtime and notices; no Rust build is needed when the matching prebuild exists.

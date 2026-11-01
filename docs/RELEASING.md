@@ -1,6 +1,6 @@
 # Publishing after maintainer review
 
-No remote, push, model upload or package publication was performed by this extraction.
+The initial extraction performed no publication. Following maintainer approval, the source and model-v1/v0.1.0 GitHub releases were published on 2026-11-01; see [publication verification](PUBLICATION-2026-11-01.md). Registry publication remains separate.
 
 1. Review the engine/model notices and the qualified v1 provenance. Set the single `REPOSITORY_OWNER` constant in `core/qrk-onnx/src/lib.rs`; no other binding keeps a second owner setting.
 2. Publish the pinned model under the separate `model-v1` release with `model/model-manifest.json` and all attribution. The source loader repeats SHA-256 + exact-size validation even if a caller supplies a modified manifest. The clean v2 candidate workflow is unexecuted and never auto-promoted.
@@ -10,4 +10,6 @@ No remote, push, model upload or package publication was performed by this extra
 6. Assemble Node prebuilds into the Node package (`npm pack`), wheel(s) for Python 3.9+, and the aggregate NuGet. Keep notices included. Windows consumers may need Microsoft's VC++ Redistributable. Native Linux builds target the runner's glibc baseline (Ubuntu 22.04+); older glibc wheels need a manylinux builder, not a renamed tag.
 7. Sign/notarize desktop distributions where the host application requires it; the SDK does not disable Gatekeeper, request broad entitlements, or install a service.
 
-Swift users can then add the public repository as one SwiftPM dependency and choose the engine/audio product. Until the reviewed release is pinned, source checkouts first run the Apple build tool; this deliberate gate prevents an invented download URL or checksum.
+Swift users can then add the public repository as one SwiftPM dependency and choose the engine/audio product. The v0.1.0 archive is already pinned. Before a future reviewed release is pinned, source checkouts first run the Apple build tool; this deliberate gate prevents an invented download URL or checksum.
+
+The release preflight verifies/reuses an already pinned archive instead of rebuilding and overwriting it. For the initial release, the still-unpublished v0.1.0 tag was moved to the checksum-pin commit before publication so version-based SwiftPM dependencies contain the working manifest. CI uses supported macos-15 arm64/macOS-15-intel runners; macOS 14 is in retirement brownout. Documentation-only changes do not trigger another full native build.

@@ -8,7 +8,7 @@
 | **File size** | 88,307,457 bytes |
 | **SHA-256** | `822534428f1ed54eb802a9c43d4ecbabdfd8ba346b4d88d710414b0bbe7b4d69` |
 | **Upstream single-output graph** | 88,307,366 bytes, SHA-256 `4767182cd92975869f81a7e32700b14ca2b04e8dc97a15ff220a8697f4639488` (Tilawa v0.2.0 release asset, produced by Cyberistic) |
-| **Distribution** | Planned separate GitHub Release asset (`model-v1`); not uploaded by this work. Downloads are explicit and verified. A locally supplied model directory works immediately. |
+| **Distribution** | [Published model-v1 release](https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/tag/model-v1). Downloads are explicit and verified. A locally supplied model directory works immediately. |
 
 ## Inputs
 
@@ -50,6 +50,6 @@ NVIDIA NeMo checkpoint → Cyberistic ONNX export + quantization (distributed by
 
 The Rust core builds its normalized index in memory from verbatim Tanzil Arabic. Only a user-local cache contains that generated index. NVIDIA's tokenizer was converted from SentencePiece Unigram (not BPE) to Hugging Face tokenizer JSON; all 77,441 source words were compared against SentencePiece without mismatches. The optional local parity test additionally compares every numbered ayah's words, token IDs and word boundaries with the prior oracle. Visual line-wrap boundaries are not a canonical engine unit.
 
-Release v1 is still the pinned model. No model file, remote repository or release asset has been uploaded by this work. Cyberistic's custom preprocessing/export rights remain qualified in THIRD_PARTY_NOTICES.md; integrity verification alone is not a license grant. The clean NVIDIA/NeMo candidate pipeline under model/export is prepared but not executed or promoted. Synthetic parity is a gate, not evidence of real-recitation accuracy.
+Release v1 is still the pinned model. The public repository and separate model-v1 release were published on 2026-11-01 after maintainer review. Cyberistic's custom preprocessing/export rights remain qualified in THIRD_PARTY_NOTICES.md; integrity verification alone is not a license grant. The clean NVIDIA/NeMo candidate pipeline under model/export is prepared but not executed or promoted. Synthetic parity is a gate, not evidence of real-recitation accuracy.
 
-CPU execution is the default. ONNX Runtime 1.24.2 is used locally; the Rust wrapper is ort 2.0.0-rc.12/API 24. Distribution helpers can embed the platform CPU runtime, materializing verified runtime bytes in a user-local cache. Windows Microsoft runtime prerequisites still apply to the chosen ONNX Runtime binary. Actual Windows execution remains a CI/user-device check, separate from cross-compilation.
+CPU execution is the default. ONNX Runtime 1.24.2 is used locally; the Rust wrapper is ort 2.0.0-rc.12/API 24. Distribution helpers can embed the platform CPU runtime, materializing verified runtime bytes in a user-local cache. Windows Microsoft runtime prerequisites still apply to the chosen ONNX Runtime binary. Native CPU inference tests passed in CI on Windows, Linux and both Mac architectures. This is not a live-microphone accuracy benchmark.
