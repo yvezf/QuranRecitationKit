@@ -1,5 +1,6 @@
 name: Cross-platform CI
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths-ignore: ['**/*.md']
