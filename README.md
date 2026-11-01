@@ -7,6 +7,8 @@ Offline Quran recitation tracking for your app. Supply the passage you expect an
 
 **One Rust engine. C ABI. Swift, Node, Python and .NET bindings. Local WebSocket/stdio helper.** Native CI passed on macOS arm64/x64, Windows x64 and Linux x64, including the public model download and actual ONNX inference. The iOS SwiftUI example also builds. [Releases](https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/tag/v0.1.0) · [Model](https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/tag/model-v1) · [Publication verification](docs/PUBLICATION-2026-11-01.md).
 
+SwiftPM consumers should use **0.1.1 or later**. This source-only patch fixes tagged manifest resolution and reuses the checksum-verified v0.1.0 native archive; other platform artifacts remain v0.1.0. [SwiftPM patch release](https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/tag/v0.1.1).
+
 ## Pick your door
 
 | Host | Start here |
@@ -75,7 +77,7 @@ The binding serializes native worker calls and applies backpressure. [Node detai
 Swift 5.9+, iOS 16+, macOS 14+. Add the public repository to your package dependencies:
 
 ```swift
-.package(url: "https://github.com/yvezfscarves-afk/QuranRecitationKit.git", from: "0.1.0")
+.package(url: "https://github.com/yvezfscarves-afk/QuranRecitationKit.git", from: "0.1.1")
 ```
 
 Choose `QuranRecitationKit` and optionally `QuranRecitationAudio`. SwiftPM downloads the exact checksum-pinned Apple archive. No local Rust toolchain is required for this path.

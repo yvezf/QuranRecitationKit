@@ -95,3 +95,11 @@ The public Swift build succeeded using the pinned release download, without rebu
 ## Remaining limits
 
 No general accuracy/Tajweed claim, physical-iPhone performance benchmark or optional CoreML/DirectML provider verification is made. The clean model-v2 candidate pipeline remains unexecuted and unpromoted. Model-v1 custom export/preprocessing rights remain qualified in THIRD_PARTY_NOTICES; public release and attribution do not constitute a license grant. Integrators retain host signing/notarization, microphone-permission and native runtime prerequisite responsibilities.
+
+## Additional consumer regression and source-only patch
+
+A real external `.package(url: ..., from: "0.1.0")` consumer exposed a bug that a full-checkout build did not: SwiftPM's tagged-manifest evaluation virtualized `#filePath` to `/Package.swift`, so the companion JSON path resolved incorrectly. No model or native inference issue was involved.
+
+Fixed in source-only **v0.1.1**: both manifests inline the verified URL/checksum, use Context.packageDirectory for optional local artifacts, and the pinning tool keeps the generated manifest pins synchronized. A tagged bare-Git consumer regression passed locally and was added to CI. Published v0.1.0 binaries/weights are unchanged; v0.1.1 explicitly reuses the exact v0.1.0 archive. New SwiftPM clients should request 0.1.1 or later. No published tag was rewritten for this patch.
+
+The public prebuilt CLI also matched 78:1 locally without ORT_DYLIB_PATH. The fresh Swift CLI matched the same recording using the public default model helper. Their final transcript was `عم يتساءلون`; the recording remained local.
