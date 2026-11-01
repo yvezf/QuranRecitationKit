@@ -86,7 +86,23 @@ namespace QuranRecitationKit
             Native.Check(Native.qrk_model_fetch(cacheDirectory, callback, IntPtr.Zero)); GC.KeepAlive(callback);
             if (failure != null) throw failure;
             if (cacheDirectory != null) return cacheDirectory;
-            var p = Native.qrk_cache_directory(); try { return System.IO.Path.Combine(Native.Read(p), "model-v1"); } finally { Native.qrk_string_free(p); }
+            var sourcePointer = Native.qrk_model_source_json();
+            try
+            {
+                using (var source = JsonDocument.Parse(Native.Read(sourcePointer)))
+                {
+                    if (source.RootElement.TryGetProperty("cache_directory", out var cache))
+                        return cache.GetString() ?? throw new InvalidOperationException("Native cache path is missing.");
+                    // Compatibility with older native archives: use the tag in their URL.
+                    var url = new Uri(source.RootElement.GetProperty("url").GetString()!);
+                    var segments = url.Segments;
+                    var release = segments[segments.Length - 2].Trim('/');
+                    var p = Native.qrk_cache_directory();
+                    try { return System.IO.Path.Combine(Native.Read(p), release); }
+                    finally { Native.qrk_string_free(p); }
+                }
+            }
+            finally { Native.qrk_string_free(sourcePointer); }
         }
     }
     internal sealed class NativeHandle : SafeHandleZeroOrMinusOneIsInvalid
@@ -123,6 +139,7 @@ namespace QuranRecitationKit
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void qrk_free(IntPtr h);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void qrk_string_free(IntPtr s);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr qrk_cache_directory();
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr qrk_model_source_json();
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern int qrk_model_fetch([MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(Utf8Marshaller))] string? cache, ProgressCallback callback, IntPtr user);
         internal static void Check(int status) { if (status != 0) throw new InvalidOperationException(Read(qrk_last_error())); }
         internal static string Read(IntPtr p)

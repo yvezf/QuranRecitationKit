@@ -4,10 +4,15 @@ import QRKFFI
 
 private struct ModelInfo: Decodable {
     let url: String; let configured: Bool; let sha256: String; let byte_count: Int64
+    let cache_directory: String?
+    static let payload: Data = Data(try! ownedString(qrk_model_source_json()).utf8)
+    static let manifest: Data = {
+        let object = try! JSONSerialization.jsonObject(with: payload) as! [String: Any]
+        return try! JSONSerialization.data(withJSONObject: object["manifest"]!, options: [.sortedKeys])
+    }()
     static let current: Self = {
         // This is engine-compiled metadata, not an external or user-controlled file.
-        let json = try! ownedString(qrk_model_source_json())
-        return try! JSONDecoder().decode(Self.self, from: Data(json.utf8))
+        return try! JSONDecoder().decode(Self.self, from: payload)
     }()
 }
 public struct ModelSource: Sendable {
@@ -38,7 +43,15 @@ public struct ModelPack: Sendable {
         progress: (@Sendable (Double) -> Void)? = nil) async throws -> ModelPack {
         guard source.sha256 == ModelInfo.current.sha256, source.byteCount == ModelInfo.current.byte_count, source.url.scheme == "https" else { throw ModelPackError.incompatibleManifest }
         if source.url == ModelSource.default.url && !ModelInfo.current.configured { throw ModelPackError.repositoryNotConfigured }
-        let root = try cache ?? URL(fileURLWithPath: ownedString(qrk_cache_directory()), isDirectory: true).appendingPathComponent("model-v1")
+        let defaultRoot: URL
+        if let directory = ModelInfo.current.cache_directory {
+            defaultRoot = URL(fileURLWithPath: directory, isDirectory: true)
+        } else {
+            // Compatibility with older native archives: derive their tag from their URL.
+            let release = URL(string: ModelInfo.current.url)!.deletingLastPathComponent().lastPathComponent
+            defaultRoot = URL(fileURLWithPath: try ownedString(qrk_cache_directory()), isDirectory: true).appendingPathComponent(release)
+        }
+        let root = cache ?? defaultRoot
         return try await ModelDownloads.shared.load(source, root, progress)
     }
 }
@@ -74,7 +87,7 @@ private actor ModelDownloads {
             try FileManager.default.createDirectory(at: staging, withIntermediateDirectories: true)
             defer { try? FileManager.default.removeItem(at: staging) }
             try FileManager.default.moveItem(at: file, to: staging.appendingPathComponent("fastconformer_full_mixed.onnx"))
-            try FileManager.default.copyItem(at: Bundle.module.url(forResource: "model-manifest", withExtension: "json")!, to: staging.appendingPathComponent("model-manifest.json"))
+            try ModelInfo.manifest.write(to: staging.appendingPathComponent("model-manifest.json"), options: .atomic)
             _ = try ModelPack(directory: staging)
             for name in ["fastconformer_full_mixed.onnx", "model-manifest.json"] {
                 let dest = directory.appendingPathComponent(name)

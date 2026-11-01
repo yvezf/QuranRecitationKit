@@ -72,7 +72,9 @@ pub extern "C" fn qrk_version() -> *const c_char {
 #[no_mangle]
 pub extern "C" fn qrk_model_source_json() -> *mut c_char {
     CString::new(serde_json::json!({
-        "url":format!("https://github.com/{}/QuranRecitationKit/releases/download/model-v1/{}",qrk_onnx::REPOSITORY_OWNER,qrk_onnx::MODEL_NAME),
+        "url":qrk_onnx::model_source_url(),
+        "model_release":qrk_onnx::MODEL_RELEASE,
+        "cache_directory":qrk_onnx::cache_directory().join(qrk_onnx::MODEL_RELEASE).to_string_lossy(),
         "configured":!qrk_onnx::REPOSITORY_OWNER.starts_with('<'),
         "sha256":qrk_onnx::MODEL_SHA256,"byte_count":qrk_onnx::MODEL_BYTES,
         "manifest":serde_json::from_str::<serde_json::Value>(qrk_onnx::MODEL_MANIFEST).unwrap()
@@ -265,6 +267,26 @@ pub unsafe extern "C" fn qrk_model_fetch(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn bindings_receive_one_consistent_model_descriptor() {
+        let pointer = qrk_model_source_json();
+        let source: serde_json::Value = unsafe {
+            let text = CStr::from_ptr(pointer).to_str().unwrap();
+            let value = serde_json::from_str(text).unwrap();
+            qrk_string_free(pointer);
+            value
+        };
+        assert_eq!(source["url"], qrk_onnx::model_source_url());
+        assert_eq!(source["model_release"], qrk_onnx::MODEL_RELEASE);
+        assert_eq!(source["sha256"], qrk_onnx::MODEL_SHA256);
+        assert_eq!(source["byte_count"], qrk_onnx::MODEL_BYTES);
+        assert_eq!(
+            source["manifest"]["model"]["sha256"],
+            qrk_onnx::MODEL_SHA256
+        );
+        let cache = qrk_onnx::cache_directory().join(qrk_onnx::MODEL_RELEASE);
+        assert_eq!(source["cache_directory"], cache.to_string_lossy().as_ref());
+    }
     #[test]
     fn null_arguments_do_not_panic() {
         unsafe {

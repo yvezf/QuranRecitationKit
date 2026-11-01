@@ -109,8 +109,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let model = args.candidate.join(&metadata.file);
     validate_file(&model, metadata.size, &metadata.sha256)?;
     let corpus = load_corpus(None)?;
+    // The baseline is the historical, immutable model-v1 artifact, independent
+    // of which model the current SDK pins by default.
+    let baseline_path = args.baseline.join("fastconformer_full_mixed.onnx");
+    validate_file(
+        &baseline_path,
+        88_307_457,
+        "822534428f1ed54eb802a9c43d4ecbabdfd8ba346b4d88d710414b0bbe7b4d69",
+    )?;
     let mut baseline = Recognizer::new(
-        ModelPack::from_directory(&args.baseline)?,
+        ModelPack {
+            model_path: baseline_path,
+        },
         corpus.clone(),
         Config::default(),
     )?;

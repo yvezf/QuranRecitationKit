@@ -14,10 +14,14 @@ use std::{
 };
 include!(concat!(env!("OUT_DIR"), "/embedded_runtime.rs"));
 pub const MODEL_NAME: &str = "fastconformer_full_mixed.onnx";
+pub const MODEL_RELEASE: &str = "model-v1";
 pub const MODEL_SHA256: &str = "822534428f1ed54eb802a9c43d4ecbabdfd8ba346b4d88d710414b0bbe7b4d69";
 pub const MODEL_BYTES: u64 = 88_307_457;
 pub const REPOSITORY_OWNER: &str = "yvezf";
 pub const MODEL_MANIFEST: &str = include_str!("../../../model/model-manifest.json");
+pub fn model_source_url() -> String {
+    format!("https://github.com/{REPOSITORY_OWNER}/QuranRecitationKit/releases/download/{MODEL_RELEASE}/{MODEL_NAME}")
+}
 fn failure(e: impl std::fmt::Display) -> Error {
     Error::Model(e.to_string())
 }
@@ -54,7 +58,7 @@ impl ModelPack {
     pub fn fetch(cache: Option<&Path>, mut progress: impl FnMut(f64)) -> Result<Self> {
         let directory = cache
             .map(Path::to_owned)
-            .unwrap_or_else(|| cache_directory().join("model-v1"));
+            .unwrap_or_else(|| cache_directory().join(MODEL_RELEASE));
         if let Ok(pack) = Self::from_directory(&directory) {
             progress(1.);
             return Ok(pack);
@@ -63,7 +67,7 @@ impl ModelPack {
             return Err(Error::Model("model release is not configured; set REPOSITORY_OWNER or use a local --model directory".into()));
         }
         fs::create_dir_all(&directory).map_err(failure)?;
-        let url=format!("https://github.com/{REPOSITORY_OWNER}/QuranRecitationKit/releases/download/model-v1/{MODEL_NAME}");
+        let url = model_source_url();
         let mut response = reqwest::blocking::Client::builder()
             .timeout(std::time::Duration::from_secs(600))
             .build()
