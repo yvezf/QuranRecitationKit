@@ -4,6 +4,7 @@ torch==2.7.1
 onnx==1.18.0
 onnxruntime==1.24.2
 onnxscript==0.3.2
+onnx-ir==0.1.5
 numpy==1.26.4
 # NeMo 2.4 predates NumPy-2-only Arrow wheels and newer PEFT APIs.
 pyarrow==19.0.1
