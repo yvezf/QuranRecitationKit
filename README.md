@@ -2,7 +2,7 @@
 
 Offline Quran recitation tracking that can be embedded in a macOS, Windows or Linux application—or used from any language through a local helper process. Supply the passage you expect and mono audio; receive word progress, ayah matches and gentle retry events.
 
-**One Rust engine. C ABI. Node binding. Local WebSocket/stdio helper.** Swift, Python and .NET bindings are being completed in Phase B. Nothing has been pushed or published by this implementation.
+**One Rust engine. C ABI. Swift, Node, Python and .NET bindings. Local WebSocket/stdio helper.** Implemented and locally tested on macOS arm64; Windows cross-compilation checked. Remote platform CI and public distribution await the publisher’s review. Nothing has been pushed or published by this implementation.
 
 ## Fastest integration: any language
 
@@ -36,6 +36,44 @@ const summary=await reciter.stop();
 ```
 
 The binding serializes native worker calls and applies backpressure. [Node details](bindings/node/README.md).
+
+## Swift, Python and .NET
+
+Swift (root SwiftPM package; iOS 16+, macOS 14+):
+
+```swift
+import QuranRecitationKit
+let model = try ModelPack(directory: modelDirectoryURL)
+let r = try await RecitationRecognizer(modelPack: model)
+let reader = Task { for await event in r.events { print(event) } }
+try await r.setExpected(.surah(112))
+await r.feed(pcm16k) // [Float], mono 16 kHz
+let summary = try await r.stop()
+reader.cancel()
+```
+
+Python 3.9+:
+
+```python
+from quranrecitationkit import Recognizer
+r = Recognizer('/path/to/model', on_event=print)
+r.set_expected({'surah': 112})
+events = r.feed(pcm16k)  # iterable of mono 16 kHz floats
+summary = r.stop()
+```
+
+.NET (`netstandard2.0`):
+
+```csharp
+using QuranRecitationKit;
+using var r = new RecitationRecognizer("/path/to/model");
+r.Event += e => Console.WriteLine(e.GetRawText());
+r.SetExpected(RecitationTarget.Surah(112));
+var events = r.Feed(pcm16k); // float[], mono 16 kHz
+var summary = r.Stop();
+```
+
+Details: [Swift](bindings/swift/README.md), [Python](bindings/python/README.md), [.NET](bindings/dotnet/README.md). Local Swift builds first run `python3 tools/build_xcframework.py`. A public one-dependency SwiftPM install requires the reviewed release archive’s exact URL/checksum to be pinned. Python wheels and the full four-platform NuGet are built by the release workflow; these are not claimed published.
 
 ## C/C++, Rust, desktop frameworks
 
@@ -90,7 +128,7 @@ Set `ORT_DYLIB_PATH` to an ONNX Runtime 1.24-compatible library for development,
 
 CLI commands: `qrk wav --surah N [--ayahs a-b] file.wav --json`, `qrk mic --surah N --json`, `qrk devices`, `qrk serve`, `qrk model fetch`, `qrk selftest`. WAV accepts PCM16/Float32 and resamples. Capture never changes the user's device selection unless a device is explicitly passed; it reports drops/errors. Microphone use requires OS permission.
 
-Local verification and remaining qualifications: [Phase A report](docs/PHASE-A-VERIFICATION.md). Platform CI and release workflows are prepared; remote execution cannot be claimed before publication. macOS Intel uses an available Intel runner rather than the retired macOS 13 label.
+Local verification and remaining qualifications: [Phase A report](docs/PHASE-A-VERIFICATION.md) and [Phase B report](docs/PHASE-B-VERIFICATION.md). Publishing steps: [release guide](docs/RELEASING.md). Platform CI and release workflows are prepared; remote execution cannot be claimed before publication. macOS Intel uses an available Intel runner rather than the retired macOS 13 label.
 
 ## License
 

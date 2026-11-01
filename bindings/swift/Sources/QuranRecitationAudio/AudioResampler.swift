@@ -9,6 +9,7 @@ public struct AudioResampler: Sendable {
         ratio = inputSampleRate / outputSampleRate
     }
     public mutating func process(_ input: [Float]) -> [Float] {
+        if ratio == 1 { return input }
         samples.append(contentsOf: input)
         var output: [Float] = []
         while position + 1 < Double(samples.count) {

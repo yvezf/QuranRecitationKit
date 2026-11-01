@@ -187,21 +187,26 @@ impl OnnxRunner {
             .lock()
             .map_err(|_| Error::Model("runtime init lock poisoned".into()))?;
         if INIT.get().is_none() {
-            let embedded = embedded_runtime()?;
-            let library = std::env::var_os("ORT_DYLIB_PATH")
-                .map(PathBuf::from)
-                .or(embedded)
-                .or_else(|| {
-                    std::env::current_exe()
-                        .ok()
-                        .and_then(|p| p.parent().map(|p| p.join(runtime_filename())))
-                        .filter(|p| p.exists())
-                })
-                .unwrap_or_else(|| PathBuf::from(runtime_filename()));
-            let _ = ort::init_from(library)
-                .map_err(failure)?
-                .with_name("QuranRecitationKit")
-                .commit();
+            #[cfg(feature = "dynamic")]
+            {
+                let embedded = embedded_runtime()?;
+                let library = std::env::var_os("ORT_DYLIB_PATH")
+                    .map(PathBuf::from)
+                    .or(embedded)
+                    .or_else(|| {
+                        std::env::current_exe()
+                            .ok()
+                            .and_then(|p| p.parent().map(|p| p.join(runtime_filename())))
+                            .filter(|p| p.exists())
+                    })
+                    .unwrap_or_else(|| PathBuf::from(runtime_filename()));
+                let _ = ort::init_from(library)
+                    .map_err(failure)?
+                    .with_name("QuranRecitationKit")
+                    .commit();
+            }
+            #[cfg(not(feature = "dynamic"))]
+            let _ = ort::init().with_name("QuranRecitationKit").commit();
             let _ = INIT.set(());
         }
         let builder = Session::builder()
@@ -289,6 +294,7 @@ impl Recognizer {
         self.inner.reset()
     }
 }
+#[cfg(feature = "dynamic")]
 fn embedded_runtime() -> Result<Option<PathBuf>> {
     let Some(bytes) = EMBEDDED_RUNTIME else {
         return Ok(None);

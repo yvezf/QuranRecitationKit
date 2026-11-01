@@ -8,7 +8,7 @@
 | **File size** | 88,307,457 bytes |
 | **SHA-256** | `822534428f1ed54eb802a9c43d4ecbabdfd8ba346b4d88d710414b0bbe7b4d69` |
 | **Upstream single-output graph** | 88,307,366 bytes, SHA-256 `4767182cd92975869f81a7e32700b14ca2b04e8dc97a15ff220a8697f4639488` (Tilawa v0.2.0 release asset, produced by Cyberistic) |
-| **Distribution** | GitHub Release asset of this repository (`model-v1`), downloaded on first use by `ModelPack.download()` and verified against the hash above. Also usable from an app bundle / on-demand resource. |
+| **Distribution** | Planned separate GitHub Release asset (`model-v1`); not uploaded by this work. Downloads are explicit and verified. A locally supplied model directory works immediately. |
 
 ## Inputs
 
@@ -17,14 +17,14 @@
 | `audio_signal` | `Float32[1, N]` | raw waveform, 16 kHz, mono, nominal range −1…1; the mel front-end is inside the graph |
 | `length` | `Int64[1]` | `N` |
 
-Maximum window used by the kit: 12 s (192,000 samples) for terminal recovery; 2 s live suffix for provisional tracking.
+Retained PCM is bounded by configuration (2–12 s, maximum 192,000 samples). The Rust recognizer evaluates buffered windows at feed boundaries and scopes scoring to decoder-supported spans. There is no separate two-second asynchronous inference mailbox in the new core.
 
 ## Outputs
 
 | Name | Shape | Notes |
 |---|---|---|
 | `log_probs` | `Float32[1, T, 1025]` | log-softmaxed CTC posteriors; blank id = 1024; T ≈ N / 1280 |
-| `/encoder/layers.16/norm_out/LayerNormalization_output_0` | `Float32[1, T, 512]` | final encoder LayerNorm; same time axis as `log_probs`; used for endpoint features |
+| `/encoder/layers.16/norm_out/LayerNormalization_output_0` | `Float32[1, T, 512]` | final encoder LayerNorm; same time axis as `log_probs`; exposed by the model but not requested by the current Rust runner |
 
 ## Vocabulary
 
@@ -32,18 +32,18 @@ Maximum window used by the kit: 12 s (192,000 samples) for terminal recovery; 2 
 
 ## How the kit uses it
 
-The kit never asks the model "which verse is this?" It knows which words are expected (a surah, an ayah range, or a line) and scores the audio against that expectation with CTC forced alignment, advancing word by word. This makes it robust to the model's general-Arabic spelling (e.g. fused letters) because expected words carry pronunciation variants, and it makes wrong-verse and noise rejection a policy decision rather than a search problem.
+The kit never asks the model "which verse is this?" It knows which words are expected (a surah, an ayah range, or a half-open word range) and scores the audio against that expectation with CTC forced alignment, advancing word by word. This makes it robust to the model's general-Arabic spelling (e.g. fused letters) because expected words carry pronunciation variants, and it makes wrong-verse and noise rejection a policy decision rather than a search problem.
 
 ## Limitations
 
 - General Arabic ASR base; not fine-tuned on recitation. Tajweed is not assessed. Pronunciation cues are coarse (word began / did not match), never a verdict on correctness of recitation.
 - Expects a reasonably quiet room and a phone-distance microphone. Heavy reverb or music lowers confidence; the kit then reports `needsRetry` rather than guessing.
-- Performance was calibrated on murattal-style recitation. Very fast or heavily melodic (mujawwad) styles may need the lookahead/backtrack limits widened.
-- On-device CPU inference. An iPhone 12-class device sustains live tracking; older devices should use the non-live (post-line) evaluation mode.
+- Acceptance uses retained heuristic thresholds; no calibrated accuracy, false-accept rate or recitation-style benchmark is supplied. Very fast or heavily melodic recitation may produce retries.
+- CPU inference is tested locally on an Apple-silicon Mac. The iOS example builds; live runtime performance on specific iPhones has not been measured for this Rust extraction.
 
 ## Provenance chain
 
-NVIDIA NeMo checkpoint → Cyberistic ONNX export + quantization (distributed by Tilawa v0.2.0, MIT project) → dual-output graph (this project; no node changes). No training or fine-tuning on any recitation audio was performed by this project. Thresholds and window sizes were calibrated privately against licensed recitations that are **not** redistributed.
+NVIDIA NeMo checkpoint → Cyberistic ONNX export + quantization (distributed by Tilawa v0.2.0, MIT project) → dual-output graph (this project; no node changes). No training or fine-tuning on any recitation audio was performed by this project. Thresholds and window sizes are inherited heuristics. No calibration dataset, reciter audio or licensed recording is redistributed, and a calibration claim is not made.
 
 
 ## Cross-platform delivery status

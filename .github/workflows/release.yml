@@ -9,11 +9,12 @@ jobs:
     strategy:
       matrix:
         include:
-          - {os: macos-14, rid: darwin-arm64}
-          - {os: macos-15-intel, rid: darwin-x64}
-          - {os: windows-2022, rid: win32-x64}
-          - {os: ubuntu-22.04, rid: linux-x64}
+          - {os: macos-14, rid: darwin-arm64, dotnet: osx-arm64}
+          - {os: macos-15-intel, rid: darwin-x64, dotnet: osx-x64}
+          - {os: windows-2022, rid: win32-x64, dotnet: win-x64}
+          - {os: ubuntu-22.04, rid: linux-x64, dotnet: linux-x64}
     runs-on: ${{ matrix.os }}
+    env: {MACOSX_DEPLOYMENT_TARGET: '14.0', DOTNET_CLI_TELEMETRY_OPTOUT: '1'}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -23,7 +24,7 @@ jobs:
         with: {node-version: '22'}
       - if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libasound2-dev pkg-config
-      - run: pip install onnxruntime==1.24.2
+      - run: pip install onnxruntime==1.24.2 'maturin>=1.7,<2'
       - name: Embed platform CPU runtime
         shell: bash
         run: |
@@ -32,7 +33,7 @@ jobs:
           c=pathlib.Path(onnxruntime.__file__).parent/'capi'
           files=[p for p in c.iterdir() if p.name.startswith('libonnxruntime.') and ('.so' in p.name or p.suffix=='.dylib') or p.name=='onnxruntime.dll']
           path=str(sorted(files)[0])
-          with open(os.environ['GITHUB_ENV'],'a')as f: f.write('QRK_EMBED_RUNTIME='+path+'\nORT_DYLIB_PATH='+path+'\n')
+          with open(os.environ['GITHUB_ENV'],'a')as f:f.write('QRK_EMBED_RUNTIME='+path+'\nORT_DYLIB_PATH='+path+'\n')
           PY
       - run: cargo build --manifest-path core/Cargo.toml --workspace --release --locked
       - run: cargo test --manifest-path core/Cargo.toml --workspace --release --locked
@@ -40,21 +41,43 @@ jobs:
       - run: npm --prefix bindings/node run build
       - run: npm --prefix bindings/node test
       - run: python tools/package_native.py --rid ${{ matrix.rid }}
+      - run: python tools/package_python.py
+      - run: maturin build --manifest-path bindings/python/Cargo.toml --release --locked --out dist/wheels
+      - run: python tools/package_dotnet.py --rid ${{ matrix.dotnet }}
       - uses: actions/upload-artifact@v4
         with:
           name: native-${{ matrix.rid }}
           path: |
-            dist/qrk-${{ matrix.rid }}.zip
-            bindings/node/prebuilds/
+            dist/*.zip
+            dist/wheels/*.whl
+            bindings/dotnet/runtimes/
+  swift:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with: {targets: 'aarch64-apple-darwin,x86_64-apple-darwin,aarch64-apple-ios,aarch64-apple-ios-sim,x86_64-apple-ios'}
+      - run: python3 tools/build_xcframework.py
+      - run: swift test --package-path bindings/swift
+      - run: python3 tools/package_swift.py
+      - uses: actions/upload-artifact@v4
+        with: {name: swift, path: 'dist/QRKFFI.xcframework.zip*'}
   publish:
-    needs: native
+    needs: [native, swift]
     runs-on: ubuntu-22.04
     permissions: {contents: write}
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: {dotnet-version: '8.0.x'}
       - uses: actions/download-artifact@v4
         with: {path: artifacts}
-      - name: Attach built archives to a draft release
+      - name: Collect native runtimes and pack NuGet
+        run: |
+          find artifacts -path '*/runtimes/*' -type f | while read f; do suffix="${f#*/runtimes/}"; mkdir -p "bindings/dotnet/runtimes/$(dirname "$suffix")"; cp "$f" "bindings/dotnet/runtimes/$suffix"; done
+          python3 tools/package_dotnet.py --pack
+      - name: Attach archives to a draft release
         env: {GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}', TAG: '${{ github.ref_name }}'}
         run: |
-          gh release view "$TAG" || gh release create "$TAG" --draft --title "$TAG" --notes 'Built artifacts; review before publishing. Model assets are separate.'
-          find artifacts -name '*.zip' -exec gh release upload "$TAG" {} --clobber \;
+          gh release view "$TAG" || gh release create "$TAG" --draft --title "$TAG" --notes 'Built artifacts; review native CI and pin Swift checksum before publishing. Model assets are separate.'
+          find artifacts dist -type f \( -name '*.zip' -o -name '*.whl' -o -name '*.nupkg' -o -name '*.sha256' \) -exec gh release upload "$TAG" {} --clobber \;

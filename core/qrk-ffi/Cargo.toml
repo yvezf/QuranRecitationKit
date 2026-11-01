@@ -7,9 +7,12 @@ build = "build.rs"
 [lib]
 name = "qrk"
 crate-type = ["cdylib", "staticlib", "rlib"]
+[features]
+default = ["dynamic"]
+dynamic = ["qrk-onnx/dynamic"]
 [dependencies]
 qrk-core = { path = "../qrk-core" }
-qrk-onnx = { path = "../qrk-onnx" }
+qrk-onnx = { path = "../qrk-onnx", default-features = false }
 serde_json.workspace = true
 [build-dependencies]
 cbindgen = "0.29"

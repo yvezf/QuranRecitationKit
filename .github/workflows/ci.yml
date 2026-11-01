@@ -6,46 +6,70 @@ on:
 permissions:
   contents: read
 jobs:
-  phase-a:
+  desktop:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14, macos-15-intel, windows-2022, ubuntu-22.04]
+        include:
+          - {os: macos-14, rid: osx-arm64}
+          - {os: macos-15-intel, rid: osx-x64}
+          - {os: windows-2022, rid: win-x64}
+          - {os: ubuntu-22.04, rid: linux-x64}
     runs-on: ${{ matrix.os }}
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '14.0'
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with: {components: rustfmt, clippy}
       - uses: Swatinem/rust-cache@v2
         with: {workspaces: core}
-      - name: Linux audio build dependencies
-        if: runner.os == 'Linux'
+      - if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libasound2-dev pkg-config
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - uses: actions/setup-dotnet@v4
+        with: {dotnet-version: '8.0.x'}
+      - run: pip install onnxruntime==1.24.2 'maturin>=1.7,<2'
+      - name: Locate and embed CPU runtime
+        shell: bash
+        run: |
+          python - <<'PY'
+          import onnxruntime,pathlib,os
+          files=[p for p in (pathlib.Path(onnxruntime.__file__).parent/'capi').iterdir() if p.name.startswith('libonnxruntime.') and ('.so' in p.name or p.suffix=='.dylib') or p.name=='onnxruntime.dll']
+          path=str(sorted(files)[0])
+          with open(os.environ['GITHUB_ENV'],'a')as f:f.write('ORT_DYLIB_PATH='+path+'\nQRK_EMBED_RUNTIME='+path+'\n')
+          PY
       - run: cargo fmt --manifest-path core/Cargo.toml --all --check
       - run: cargo clippy --manifest-path core/Cargo.toml --workspace --all-targets -- -D warnings
       - run: cargo build --manifest-path core/Cargo.toml --workspace --release --locked
       - run: cargo test --manifest-path core/Cargo.toml --workspace --locked
       - run: cargo run --manifest-path core/Cargo.toml -p qrk-cli --release -- selftest
-      - uses: actions/setup-node@v4
-        with: {node-version: '22'}
-      - uses: actions/setup-python@v5
-        with: {python-version: '3.11'}
-      - run: pip install onnxruntime==1.24.2
-      - name: Locate ONNX Runtime
-        shell: bash
-        run: |
-          python - <<'PY'
-          import onnxruntime, pathlib, os
-          capi=pathlib.Path(onnxruntime.__file__).parent/'capi'
-          files=[p for p in capi.iterdir() if p.name.startswith('libonnxruntime.') and ('.so' in p.name or p.suffix=='.dylib') or p.name=='onnxruntime.dll']
-          with open(os.environ['GITHUB_ENV'],'a') as f: f.write('ORT_DYLIB_PATH='+str(sorted(files)[0])+'\n')
-          PY
       - run: npm --prefix bindings/node ci --ignore-scripts
       - run: npm --prefix bindings/node run build
       - run: npm --prefix bindings/node test
-  swift-reference:
+      - run: python tools/package_python.py
+      - run: cargo fmt --manifest-path bindings/python/Cargo.toml --check
+      - run: maturin build --manifest-path bindings/python/Cargo.toml --release --locked --out dist/wheels
+      - shell: bash
+        run: pip install dist/wheels/*.whl && python -m unittest discover -s bindings/python/tests -v
+      - run: dotnet build examples/dotnet-console/RecitationDemo.csproj -c Release
+      - name: .NET native smoke (engine version, no model download)
+        shell: bash
+        run: |
+          mkdir -p examples/dotnet-console/bin/Release/net8.0
+          cp core/target/release/qrk.dll examples/dotnet-console/bin/Release/net8.0/ 2>/dev/null || cp core/target/release/libqrk.* examples/dotnet-console/bin/Release/net8.0/
+          dotnet run --project examples/dotnet-console/RecitationDemo.csproj -c Release --no-build
+  swift:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
-      - name: Build retained Swift reference (no generated corpus distributed)
-        run: swift build --package-path bindings/swift -v
+      - uses: dtolnay/rust-toolchain@stable
+        with: {targets: 'aarch64-apple-darwin,x86_64-apple-darwin,aarch64-apple-ios,aarch64-apple-ios-sim,x86_64-apple-ios'}
+      - run: python3 tools/build_xcframework.py
+      - run: swift test --package-path bindings/swift
+      - name: Build SwiftUI example
+        run: xcodebuild -project examples/swift-ios/RecitationDemo.xcodeproj -scheme RecitationDemo -destination 'generic/platform=iOS Simulator' -derivedDataPath /private/tmp/HearBuild-shared CODE_SIGNING_ALLOWED=NO build

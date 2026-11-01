@@ -1,27 +1,26 @@
 # Architecture
 
-```
- mic / your audio ──► resample ──► 16 kHz mono f32 ──► qrk-onnx (FastConformer CTC) ──► log_probs [T × 1025]
-                                                                                   └─► encoder features [T × 512]
- Target (surah / ayahs / words) ──► Corpus (verbatim Tanzil → runtime index) ──► CanonicalWordIndex ──► expected window
-                                                                                                        │
-                  log_probs + expected window ──► CtcScorer (forced alignment, per word) ──► ExpectedWordAligner
-                                                                                                        │
-                                              LineAcceptancePolicy (stability, margins, silence gate) ──► Events (JSON)
-                                                                                                        │
-                                           ┌──────────────┬──────────────┬──────────────┬───────────────┤
-                                        qrk-ffi (C)    qrk-cli/serve   Node (napi)   Python (pyo3)   .NET (P/Invoke)
-                                           └── Swift ──┘
+```text
+Host PCM / explicit microphone capture
+  → bandlimited resample (Rust adapter) → mono 16 kHz f32
+  → qrk-onnx (CPU default) → CTC log probabilities [T,1025]
+  → qrk-core expected-text session + forced alignment + acceptance → events
+      ├ C ABI → Swift actor / .NET P/Invoke
+      ├ napi-rs → Node EventEmitter
+      ├ PyO3 → Python returned events / callback
+      └ qrk helper → localhost WebSocket / stdio → any host language
 ```
 
-**One engine.** `qrk-core` is pure Rust with no I/O: it takes PCM and returns events. `qrk-onnx` and `qrk-audio` are the only crates that touch hardware. Every binding and the sidecar call the same functions and emit the same JSON, defined once in `protocol/events.schema.json`.
+`qrk-core` has no normal file/network/hardware I/O. A generic `AcousticModel` seam accepts synthetic runners. `qrk-onnx::Recognizer` supplies model loading and the concrete runner, avoiding a dependency cycle. The model's second output remains exposed but the current runner requests only CTC log probabilities. No endpoint classifier is trained or shipped.
 
-**Why expected-text tracking.** Open-set verse identification needs a search over 6,236 ayahs on every window and is fragile on consumer hardware. Tracking inverts the problem: the host already knows what the reciter intends, so the engine asks the model "how well does this audio explain *these* words, in order?" via CTC forced alignment, and moves a cursor. Repeats, back-tracks and short skips are handled by a bounded window around the cursor; a reciter who is clearly somewhere else triggers `needs_retry(off_target)` rather than a wrong acceptance.
+The corpus contains 114 surahs / 6,236 ayahs of verbatim Tanzil Arabic with attribution. Startup creates a normalized/tokenized in-memory index and ayah-level confusers; `qrk-onnx` optionally caches it in the user's app cache, keyed by corpus/tokenizer/index version. No generated matching index ships. NVIDIA's actual SentencePiece **Unigram** tokenizer is converted to `tokenizer.json`; 77,441 source word checks found zero tokenization differences. Public targets are ayahs or zero-based half-open word ranges, independent of app visual line wrapping. Internal acoustic spans are bounded to eight words; only completed requested units produce verse-match events.
 
-**Runtime corpus index.** Tanzil's text is shipped verbatim (that is what Tanzil permits). At startup the engine normalizes and tokenizes it with NVIDIA's SentencePiece tokenizer (via the `tokenizers` crate) into per-ayah word/token tables plus confuser indices, in well under a second, and caches the result in the user's app cache. Nothing derived from the text is distributed.
+The session retains at most 2–12 seconds of PCM and evaluates synchronously at feed boundaries. Bindings should feed roughly 300 ms chunks and await/serialize each call. The Node binding runs inference on a native worker and caps queued commands; Python releases the GIL; Swift uses an actor; .NET executes on the caller's worker. There is no inherited Swift latest-only inference mailbox in the new engine. Provisional word highlighting is deliberately weaker than acceptance; the summary is authoritative for accepted verses. CTC identity margins, ordered word coverage, speech floors, silence and stability gate acceptance; noise/uncertain input yields a neutral retry, not a Tajweed accusation. These are heuristic safeguards, not a measured accuracy guarantee.
 
-**Pronunciation variants.** The base model is general Arabic, so some Qur'anic spellings (fused ra, single-token "ahad", etc.) decode differently from the normalized text. `corpus/variants.json` carries the admitted variants per word; the aligner accepts any of them. This is where most of the accuracy over a naive transcript-diff comes from.
+Pronunciation variants are restricted by surah/ayah/word and source token sequence. Standalone Muqattaat positions have exact suffix fences, longer speech floors and repeated-evidence requirements. Changing acceptance policy or the model requires new synthetic and real-audio evaluation.
 
-**Live vs terminal evaluation.** Live mode runs a cheap 2-second suffix pass on a latest-only mailbox so a UI can paint progress while the reciter speaks; the terminal pass (up to 12 s) decides acceptance. Both use the same scorer and the same policy, so what the user sees mid-line never disagrees with the final decision.
+The C ABI owns opaque, mutex-protected sessions. Strings in callbacks are borrowed for that call; summary/metadata strings are owned and explicitly freed. Native wrappers copy JSON before returning to host callbacks. No handle may be freed concurrently with a C call. Safe bindings serialize lifetime operations; callers must not re-enter a session from its callback. Swift's event stream buffers 512 recent events, while stop returns all accepted verses. Hosts should consume progress promptly.
 
-**Sidecar.** `qrk serve` wraps the engine in a localhost WebSocket (and `--stdio`): `start` JSON → binary PCM frames → JSON events → `stop` → `summary`. It exists so that software in any language, with no native build step, can integrate in an hour.
+Apple archives link the pinned Microsoft CPU runtime statically and contain iOS arm64, Simulator arm64/x64 and universal macOS. Desktop distributions can embed the official platform runtime bytes, validate their hash and extract them to user-local cache. This is a self-contained helper distribution rather than a claim that every desktop ONNX dependency is statically linked. Windows VC++ runtime prerequisites may apply. Optional CoreML/DirectML paths exist but CPU is the verified default.
+
+`qrk serve` binds 127.0.0.1 only, bounds messages/sessions and optionally requires a bearer token. Unauthenticated remote browser Origins are rejected; native/file clients remain possible. Audio/model inference stays local. Downloads are explicit, HTTPS and SHA/size pinned. No app backend, analytics, account, billing, product entitlement or garden state crosses the SDK boundary.

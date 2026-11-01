@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
-"""Deterministic ayah-based matching index. Arabic input remains verbatim Tanzil text."""
+"""DEVELOPMENT ONLY: recreate an unshipped legacy comparison index outside the repo.
+Never distribute its output. Production creates an in-memory/user-cache index.
+"""
 from __future__ import annotations
 import argparse, collections, hashlib, heapq, json, os, re, sys, tempfile, unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 import sentencepiece as spm
-ROOT=Path(__file__).resolve().parents[2] / 'bindings/swift'
-QURAN_PATH=ROOT/'Tools/data/quran-uthmani.json'
-TOKENIZER_PATH=ROOT/'Tools/vendor/tokenizer.model'
-OUTPUT=ROOT/'Sources/QuranRecitationKit/Resources'
-VOCAB_PATH=OUTPUT/'vocab.json'
+ROOT=Path(__file__).resolve().parents[2]
+QURAN_PATH=ROOT/'corpus/quran-uthmani.json'
+TOKENIZER_PATH=ROOT/'model/tokenizer.model'
+OUTPUT=None
+VOCAB_PATH=ROOT/'model/vocab.json'
 EXPECTED_AYAH_COUNT=6236
 EXPECTED_SURAH_COUNT=114
 EXPECTED_TOKENIZER_SIZE=254806
@@ -527,7 +529,7 @@ def write_atomically(path: Path, data: bytes) -> None:
 
 def build_outputs():
     if spm.__version__ != EXPECTED_SENTENCEPIECE_VERSION:
-        raise GenerationError('Install the pinned Tools/requirements.txt')
+        raise GenerationError('Install tests/dev/requirements.txt in an isolated developer environment')
     validate_fixed_artifact(TOKENIZER_PATH, EXPECTED_TOKENIZER_SIZE, EXPECTED_TOKENIZER_SHA256)
     validate_fixed_artifact(VOCAB_PATH, EXPECTED_VOCAB_SIZE, EXPECTED_VOCAB_SHA256)
     q=load_json(QURAN_PATH)
@@ -546,11 +548,14 @@ def build_outputs():
     policy={'version':1,'maximum_per_line':16,'canonical_line_order':'ayah record order, then segment_word_ends order within each ayah','excluded_implicit_runtime_confusers':['same-ayah sibling lines','canonical global line index +/-2']}
     payload={'attribution':q['attribution'],'schema_version':2,'record_layout':['surah','ayah','normalized_words','token_ids','word_token_ends','segment_word_ends'],'ayahs':records,'arabic':arabic,'surahs':surahs,'line_confuser_policy':policy,'line_confusers':confusers,'normalization':{'id':'quran-arabic-v1','implementation':'ArabicNormalizer.swift'},'statistics':{'ayah_count':len(records),'surah_count':len(surahs),'semantic_word_count':sum(len(r[2]) for r in records),'segment_count':len(records),'line_confuser_count':sum(map(len,confusers))}}
     data=canonical_json(payload)
-    manifest={'schema_version':2,'artifacts':{'quran_token_map':{'file':'quran-token-map.json','sha256':sha256_bytes(data),'size':len(data)}},'generator':{'file':'Tools/generate_token_map.py','sha256':sha256_file(Path(__file__))},'source':{'file':'Tools/data/quran-uthmani.json','sha256':sha256_file(QURAN_PATH),'attribution':q['attribution']},'tokenizer':{'sha256':EXPECTED_TOKENIZER_SHA256,'sentencepiece_version':spm.__version__},'vocabulary':{'sha256':EXPECTED_VOCAB_SHA256}}
+    manifest={'schema_version':2,'artifacts':{'quran_token_map':{'file':'quran-token-map.json','sha256':sha256_bytes(data),'size':len(data)}},'generator':{'file':'tests/dev/generate_swift_token_map.py','sha256':sha256_file(Path(__file__))},'source':{'file':'corpus/quran-uthmani.json','sha256':sha256_file(QURAN_PATH),'attribution':q['attribution']},'tokenizer':{'sha256':EXPECTED_TOKENIZER_SHA256,'sentencepiece_version':spm.__version__},'vocabulary':{'sha256':EXPECTED_VOCAB_SHA256}}
     return {'quran-token-map.json':data,'quran-token-map.manifest.json':canonical_json(manifest)}
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--check',action='store_true');args=parser.parse_args()
+    global OUTPUT
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--check',action='store_true');parser.add_argument('--out',type=Path,required=True);args=parser.parse_args()
+    OUTPUT=args.out.resolve()
+    if OUTPUT==ROOT or ROOT in OUTPUT.parents:raise GenerationError('Comparison indices must stay outside this repository; never distribute them')
     outputs=build_outputs()
     for name,data in outputs.items():
         path=OUTPUT/name

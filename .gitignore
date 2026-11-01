@@ -37,3 +37,15 @@ __pycache__/
 model/export/out/
 candidate/
 dist/
+
+.dotnet/
+bindings/swift/Artifacts/
+bindings/python/.venv/
+**/bin/
+**/obj/
+*.nupkg
+*.whl
+
+bindings/python/LICENSES/
+
+bindings/node/prebuilds/

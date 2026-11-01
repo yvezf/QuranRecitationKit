@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion><Nullable>enable</Nullable>
+    <PackageId>QuranRecitationKit</PackageId><Version>0.1.0</Version>
+    <Authors>Yousef Alabadi</Authors><Description>Offline expected-text Quran recitation tracking with a shared Rust core.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile><NoWarn>1591</NoWarn>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup><PackageReference Include="System.Text.Json" Version="8.0.6" /></ItemGroup>
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="/" />
+    <None Include="../runtimes/**/*" Pack="true" PackagePath="runtimes/%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="../../../LICENSE" Pack="true" PackagePath="licenses/" />
+    <None Include="../../../THIRD_PARTY_NOTICES.md" Pack="true" PackagePath="licenses/" />
+    <None Include="../../../third-party/**/*" Pack="true" PackagePath="licenses/third-party/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

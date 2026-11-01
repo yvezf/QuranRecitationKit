@@ -15,3 +15,8 @@ All notable changes to this project are documented here. The format follows Keep
 ## [0.1.0] — 2026-11-01
 
 Internal milestone: the recognizer extracted from Hablobi into a standalone Swift package (now `bindings/swift/`).
+
+### Local implementation status
+- Phase A committed separately; Phase B rebases Swift onto the shared C ABI and adds PyO3 abi3 and netstandard2.0 bindings.
+- Apple XCFramework includes static ONNX Runtime; native archives, wheel notice staging and aggregate NuGet packaging are prepared.
+- Model publication, remote CI, and Swift public archive checksum pinning remain publisher-review steps. No model-v1 asset is claimed uploaded.

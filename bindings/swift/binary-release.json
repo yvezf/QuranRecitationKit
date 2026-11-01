@@ -1,0 +1,1 @@
+{"url":null,"checksum":null,"note":"Pin the reviewed Release archive with tools/package_swift.py --pin --archive PATH --tag v0.1.0 after configuring the one Rust release owner constant."}

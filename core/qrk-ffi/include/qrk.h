@@ -37,6 +37,21 @@ const char *qrk_last_error(void);
 const char *qrk_version(void);
 
 /**
+ * Owned UTF-8 JSON describing the pinned model and configured release URL. Free with qrk_string_free.
+ */
+char *qrk_model_source_json(void);
+
+/**
+ * Owned UTF-8 platform cache directory. Free with qrk_string_free.
+ */
+char *qrk_cache_directory(void);
+
+/**
+ * Verbatim, attributed Arabic corpus for host display. No normalized index. Free with qrk_string_free.
+ */
+char *qrk_corpus_json(void);
+
+/**
  * Create a handle. The caller owns it and calls qrk_free once.
  * # Safety
  * Non-null strings must be NUL-terminated UTF-8; out must point to writable pointer storage.

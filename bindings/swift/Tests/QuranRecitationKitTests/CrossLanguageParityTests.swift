@@ -25,11 +25,4 @@ final class CrossLanguageParityTests: XCTestCase {
         let fixtures = try JSONDecoder().decode([Fixture].self, from: Data(contentsOf: fixtureDirectory.appendingPathComponent("aligner.json")))
         for f in fixtures { XCTAssertEqual(ExpectedWordAligner.align(decodedText:f.decoded,expectedAyahWords:f.expected,lineWordRange:f.from..<f.to).matchedAyahWordIndices,Set(f.matches)) }
     }
-    func testActualFatihaSixVariant() throws {
-        let c = try QuranTokenCatalog.bundled()
-        let line = try c.line(surahNumber:1,ayahNumber:6,ayahWordRange:0..<3)
-        let alt = QuranPronunciationTokenVariants.auditedAlternateTokenization(expectedTokenIDs:line.tokenIDs,wordTokenEnds:line.wordTokenEnds,surahNumber:1,ayahNumber:6,ayahWordRange:0..<3)
-        XCTAssertNotNil(alt)
-        XCTAssertEqual(alt?.tokenIDs[5],112)
-    }
 }

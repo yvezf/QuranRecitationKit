@@ -68,6 +68,30 @@ pub extern "C" fn qrk_last_error() -> *const c_char {
 pub extern "C" fn qrk_version() -> *const c_char {
     c"0.1.0".as_ptr()
 }
+/// Owned UTF-8 JSON describing the pinned model and configured release URL. Free with qrk_string_free.
+#[no_mangle]
+pub extern "C" fn qrk_model_source_json() -> *mut c_char {
+    CString::new(serde_json::json!({
+        "url":format!("https://github.com/{}/QuranRecitationKit/releases/download/model-v1/{}",qrk_onnx::REPOSITORY_OWNER,qrk_onnx::MODEL_NAME),
+        "configured":!qrk_onnx::REPOSITORY_OWNER.starts_with('<'),
+        "sha256":qrk_onnx::MODEL_SHA256,"byte_count":qrk_onnx::MODEL_BYTES,
+        "manifest":serde_json::from_str::<serde_json::Value>(qrk_onnx::MODEL_MANIFEST).unwrap()
+    }).to_string()).unwrap().into_raw()
+}
+/// Owned UTF-8 platform cache directory. Free with qrk_string_free.
+#[no_mangle]
+pub extern "C" fn qrk_cache_directory() -> *mut c_char {
+    CString::new(qrk_onnx::cache_directory().to_string_lossy().as_ref())
+        .unwrap()
+        .into_raw()
+}
+/// Verbatim, attributed Arabic corpus for host display. No normalized index. Free with qrk_string_free.
+#[no_mangle]
+pub extern "C" fn qrk_corpus_json() -> *mut c_char {
+    CString::new(include_str!("../../../corpus/quran-uthmani.json"))
+        .unwrap()
+        .into_raw()
+}
 /// Create a handle. The caller owns it and calls qrk_free once.
 /// # Safety
 /// Non-null strings must be NUL-terminated UTF-8; out must point to writable pointer storage.

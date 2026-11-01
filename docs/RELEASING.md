@@ -1,0 +1,13 @@
+# Publishing after maintainer review
+
+No remote, push, model upload or package publication was performed by this extraction.
+
+1. Review the engine/model notices and the qualified v1 provenance. Set the single `REPOSITORY_OWNER` constant in `core/qrk-onnx/src/lib.rs`; no other binding keeps a second owner setting.
+2. Publish the pinned model under the separate `model-v1` release with `model/model-manifest.json` and all attribution. The source loader repeats SHA-256 + exact-size validation even if a caller supplies a modified manifest. The clean v2 candidate workflow is unexecuted and never auto-promoted.
+3. Run the desktop/Apple CI. Actual Windows/Linux/Intel execution is required before claiming those runners passed. The local Windows check is compile-only. Hardware-microphone accuracy remains separate from silence and direct-file tests.
+4. Build/review release archives. `tools/build_xcframework.py` produces an ignored Apple archive; `tools/package_swift.py` zips it. The remote SwiftPM checksum must refer to the **exact reviewed archive**: run `tools/package_swift.py --pin --archive PATH_TO_REVIEWED_ZIP --tag v0.1.0`, commit the metadata, and publish that same zip. Do not rebuild and upload different bytes under that checksum. The root Swift Package and `bindings/swift` package use the same metadata file. Local source builds use the ignored local XCFramework instead.
+5. `release.yml` collects four CLI/C archives, four Node prebuild archives, Python abi3 wheels and an Apple XCFramework. Its aggregate job packs NuGet only after all four native RID assets exist. It attaches files to a **draft** GitHub release. Review/pin the exact Swift checksum before publishing; do not replace an already pinned Swift asset with a later CI rebuild. This workflow does not publish to npm, PyPI or NuGet.
+6. Assemble Node prebuilds into the Node package (`npm pack`), wheel(s) for Python 3.9+, and the aggregate NuGet. Keep notices included. Windows consumers may need Microsoft's VC++ Redistributable. Native Linux builds target the runner's glibc baseline (Ubuntu 22.04+); older glibc wheels need a manylinux builder, not a renamed tag.
+7. Sign/notarize desktop distributions where the host application requires it; the SDK does not disable Gatekeeper, request broad entitlements, or install a service.
+
+Swift users can then add the public repository as one SwiftPM dependency and choose the engine/audio product. Until the reviewed release is pinned, source checkouts first run the Apple build tool; this deliberate gate prevents an invented download URL or checksum.
