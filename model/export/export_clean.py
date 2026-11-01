@@ -22,7 +22,7 @@ class RawAudioCTC(torch.nn.Module):
         # unchanged; the neural encoder/decoder still run in FP32.
         features,feature_length=self.model.preprocessor(input_signal=audio_signal.to(torch.float64),length=length)
         encoded,encoded_length=self.model.encoder(audio_signal=features.to(torch.float32),length=feature_length)
-        return self.model.ctc_decoder(encoder_output=encoded),encoded.transpose(1,2)
+        return self.model.ctc_decoder(encoder_output=encoded),encoded.transpose(1,2),features
 def main():
     p=argparse.ArgumentParser();p.add_argument('--out',type=Path,required=True);p.add_argument('--checkpoint',type=Path);args=p.parse_args();args.out.mkdir(parents=True,exist_ok=True)
     checkpoint=args.checkpoint
@@ -40,10 +40,14 @@ def main():
     # Dynamo handles supported complex/STFT decompositions. Unsupported export fails here.
     # Use Torch 2.7's native opset. Keep ONNXScript/IR versions pinned together;
     # finalization must inline local functions before version conversion.
-    torch.onnx.export(wrapper,(wave,length),str(source),input_names=['audio_signal','length'],output_names=['log_probs',HIDDEN],dynamic_axes={'audio_signal':{1:'N'},'log_probs':{1:'T'},HIDDEN:{1:'T'}},opset_version=18,dynamo=True,external_data=False)
+    torch.onnx.export(wrapper,(wave,length),str(source),input_names=['audio_signal','length'],output_names=['log_probs',HIDDEN,'mel_features'],dynamic_axes={'audio_signal':{1:'N'},'log_probs':{1:'T'},HIDDEN:{1:'T'}},opset_version=18,dynamo=True,external_data=False)
     onnx.checker.check_model(str(source))
     check_source_fidelity(wrapper,source,args.out/'source-fidelity.json')
-    del wrapper,model,wave,length
+    # Frontend output is diagnostic only; the distributed model keeps two outputs.
+    graph=onnx.load(str(source))
+    del graph.graph.output[2:]
+    onnx.save(graph,str(source))
+    del graph,wrapper,model,wave,length
     gc.collect()
     quantized=args.out/'candidate-mixed.onnx'
     quantize(source,quantized)
