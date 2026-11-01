@@ -15,7 +15,12 @@ jobs:
       - name: Install matching CPU PyTorch wheels
         run: pip install torch==2.7.1+cpu torchaudio==2.7.1+cpu torchvision==0.22.1+cpu --index-url https://download.pytorch.org/whl/cpu
       - run: pip install -r model/export/requirements.txt
-      - run: python model/export/export_clean.py --out candidate
+      - name: Record resolved environment
+        run: mkdir -p candidate && pip freeze > candidate/environment.txt
+      - name: Export and quantize clean candidate
+        run: |
+          set -o pipefail
+          python model/export/export_clean.py --out candidate 2>&1 | tee candidate/export.log
       - name: Compare with existing v1 release
         env:
           GH_TOKEN: ${{ github.token }}
