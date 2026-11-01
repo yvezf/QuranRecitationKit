@@ -1,4 +1,7 @@
 {
   "url": "https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/download/v0.1.0/QRKFFI.xcframework.zip",
-  "checksum": "8116b345ca0f1aca43b80430d02e4ccc49028e71c62848656248ac09a22e43ab"
+  "checksum": "8116b345ca0f1aca43b80430d02e4ccc49028e71c62848656248ac09a22e43ab",
+  "source_only_releases": [
+    "v0.1.1"
+  ]
 }
