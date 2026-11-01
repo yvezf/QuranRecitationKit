@@ -19,11 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-The acoustic model, tokenizer vocabulary, and Qur'an text that this package
-uses are not covered by the license above. They are distributed under their
-own licenses (NVIDIA CC BY 4.0, Tanzil Project CC BY 3.0). Portions of the
-Swift code are derived from the Tilawa project (MIT, Copyright (c) 2026
-yazinsai). See THIRD_PARTY_NOTICES.md for the full text and obligations.

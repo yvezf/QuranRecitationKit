@@ -1,0 +1,7 @@
+The acoustic model, tokenizer vocabulary, and Qur'an text that this package
+uses are not covered by the license above. They are distributed under their
+own licenses (NVIDIA CC BY 4.0, Tanzil Project CC BY 3.0). Portions of the
+Swift code are derived from the Tilawa project (MIT, Copyright (c) 2026
+yazinsai). See THIRD_PARTY_NOTICES.md for the full text and obligations.
+
+https://github.com/yvezfscarves-afk/QuranRecitationKit/blob/main/THIRD_PARTY_NOTICES.md
