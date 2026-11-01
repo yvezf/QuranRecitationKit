@@ -18,4 +18,12 @@ if a.pin:
     if not re.fullmatch(r'v[0-9]+\.[0-9]+\.[0-9]+(?:[-.a-zA-Z0-9]*)',a.tag):raise SystemExit('invalid release tag')
     metadata={'url':f'https://github.com/{owner}/QuranRecitationKit/releases/download/{a.tag}/QRKFFI.xcframework.zip','checksum':sha}
     (root/'bindings/swift/binary-release.json').write_text(json.dumps(metadata,indent=2)+'\n')
+    # SwiftPM evaluates version manifests through a virtual filesystem; sidecar file reads are not supported there.
+    for manifest in [root/'Package.swift',root/'bindings/swift/Package.swift']:
+        text=manifest.read_text()
+        text,n=re.subn(r'    binary = \.binaryTarget\(name: "QRKFFI", url: "[^"]+", checksum: "[^"]+"\)',
+            f'    binary = .binaryTarget(name: "QRKFFI", url: "{metadata["url"]}", checksum: "{sha}")',text)
+        if n!=1:raise SystemExit(f'Expected one inline binary release pin in {manifest.name}')
+        manifest.write_text(text)
+
 print(archive.name+' '+sha)

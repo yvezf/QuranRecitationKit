@@ -73,6 +73,7 @@ jobs:
         with: {targets: 'aarch64-apple-darwin,x86_64-apple-darwin,aarch64-apple-ios,aarch64-apple-ios-sim,x86_64-apple-ios'}
       - run: python3 tools/build_xcframework.py
       - run: swift test --package-path bindings/swift
+      - run: python3 tools/check_swift_dependency.py
       - run: python3 tools/package_swift.py
       - uses: actions/upload-artifact@v4
         with: {name: swift, path: 'dist/QRKFFI.xcframework.zip*'}
