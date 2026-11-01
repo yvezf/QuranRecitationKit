@@ -1,0 +1,15 @@
+[package]
+name = "qrk-ffi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+build = "build.rs"
+[lib]
+name = "qrk"
+crate-type = ["cdylib", "staticlib", "rlib"]
+[dependencies]
+qrk-core = { path = "../qrk-core" }
+qrk-onnx = { path = "../qrk-onnx" }
+serde_json.workspace = true
+[build-dependencies]
+cbindgen = "0.29"

@@ -1,0 +1,14 @@
+[workspace]
+resolver = "2"
+members = ["qrk-core", "qrk-onnx", "qrk-audio", "qrk-ffi", "qrk-cli"]
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["Yousef Alabadi"]
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+sha2 = "0.10"
+hex = "0.4"

@@ -50,17 +50,17 @@ No parties above endorse this project. Model contract and hashes are in [MODEL_C
 
 Source: [Tanzil Project](https://tanzil.net). License: [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) together with [Tanzil's additional text conditions](https://tanzil.net/docs/text_license).
 
-`Tools/data/quran-uthmani.json` preserves every source Arabic string and contains no translation. The source attribution and full Tanzil notice are retained there and in `Tools/data/TANZIL-NOTICE.txt`.
+`corpus/quran-uthmani.json` preserves every source Arabic string and the full Tanzil notice; no translation is included. The Rust engine normalizes and tokenizes in memory at startup and may cache that index on the user's own machine. No generated normalized Quran index is committed or included in release assets. Host UIs must display verbatim text, indicate Tanzil as source, link to Tanzil and reproduce the notice. The retained Swift comparison implementation is development-only until its Phase B rebase and does not distribute its locally generated matching resources.
 
-`Resources/quran-token-map.json` is a generated matching index. It includes normalized/tokenized matching data and verbatim display Arabic, and reproduces Tanzil's notice. The index is not presented as Quran display text. Numbered-verse projection separates optional unnumbered preambles without rewriting the source's Arabic strings.
-
-**Qualification before publishing the derived index:** Tanzil explicitly restricts changes to its text. Treating normalization as a machine index rather than display text is a technical distinction, not a permission grant. Confirm permission for this distribution or adopt a runtime/local generation design that respects the applicable terms. Shipping a generator does not automatically authorize redistributing its output. Do not claim that the generic CC BY label settles this additional condition.
-
-When displaying the Arabic text, preserve it verbatim, indicate Tanzil as source, link to Tanzil, and carry the full notice. This package includes the notice in both source and generated text-containing artifacts.
+The full copyright/terms notice is in `corpus/TANZIL-NOTICE.txt` and the corpus attribution block. Numbered-verse projection separates optional unnumbered preambles by slicing the original text; it does not rewrite source Arabic strings. These are the technical distribution choices requested for the package; this document is not a separate permission grant from Tanzil.
 
 ## 4. ONNX Runtime
 
 [Microsoft ONNX Runtime](https://github.com/microsoft/onnxruntime) and its [Swift package](https://github.com/microsoft/onnxruntime-swift-package-manager) are MIT-licensed. `Package.swift` requests >=1.24.0 and <2.0.0; `Package.resolved` pins 1.24.2, revision `b7fb7f7dea8a2469e6335d95a61b8f36d0dc83b2`. Dependency distributions retain Microsoft's notices.
+
+## 4a. Rust and native binding dependencies
+
+Rust dependencies are pinned in core/Cargo.lock and the binding lockfiles. The implementation uses tokenizers (Apache-2.0), ort (MIT/Apache-2.0), cpal/rubato, serde, Tokio/tungstenite, napi-rs and their transitive dependencies under their respective licenses. Native release artifacts must carry the generated dependency notices, alongside `third-party/ONNXRUNTIME-LICENSE` and `third-party/ONNXRUNTIME-NOTICES.txt`. The Node transport dependency ws is MIT. Python/.NET binding notices are completed with those bindings.
 
 ## 5. Build-time tooling and platform frameworks
 

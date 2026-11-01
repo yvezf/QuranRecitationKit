@@ -1,0 +1,18 @@
+[package]
+name = "qrk-onnx"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[features]
+coreml = ["ort/coreml"]
+directml = ["ort/directml"]
+[dependencies]
+qrk-core = { path = "../qrk-core" }
+ort = { version = "=2.0.0-rc.12", default-features = false, features = ["std", "ndarray", "load-dynamic", "api-24"] }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+sha2.workspace = true
+hex.workspace = true
+directories = "6"
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }

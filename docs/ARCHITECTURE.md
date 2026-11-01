@@ -1,27 +1,27 @@
 # Architecture
 
-```text
-Microphone / WAV / host PCM
-  -> 16 kHz mono Float32
-  -> RecitationRecognizer actor
-  -> RecognitionSession: bounded ring + newest/terminal mailbox + generation fences
-  -> OnnxRunner: serial ONNX Runtime queues, bounded pending requests
-  -> CTC logits -> greedy decode -> ordered word support + target/confuser CTC comparison
-  -> endpoint/identity policy -> RecitationEvent -> host UI
-
-RecitationTarget -> validated ayah catalog -> canonical word windows
-ModelPack -> independently pinned model file
-Bundle.module -> vocabulary, ayah index, manifests
+```
+ mic / your audio ──► resample ──► 16 kHz mono f32 ──► qrk-onnx (FastConformer CTC) ──► log_probs [T × 1025]
+                                                                                   └─► encoder features [T × 512]
+ Target (surah / ayahs / words) ──► Corpus (verbatim Tanzil → runtime index) ──► CanonicalWordIndex ──► expected window
+                                                                                                        │
+                  log_probs + expected window ──► CtcScorer (forced alignment, per word) ──► ExpectedWordAligner
+                                                                                                        │
+                                              LineAcceptancePolicy (stability, margins, silence gate) ──► Events (JSON)
+                                                                                                        │
+                                           ┌──────────────┬──────────────┬──────────────┬───────────────┤
+                                        qrk-ffi (C)    qrk-cli/serve   Node (napi)   Python (pyo3)   .NET (P/Invoke)
+                                           └── Swift ──┘
 ```
 
-`QuranRecitationKit` owns no microphone, UI, product state, or durable recitation history. `QuranRecitationAudio` supplies optional capture. The CLI reads local WAV files; the example is a plain host UI.
+**One engine.** `qrk-core` is pure Rust with no I/O: it takes PCM and returns events. `qrk-onnx` and `qrk-audio` are the only crates that touch hardware. Every binding and the sidecar call the same functions and emit the same JSON, defined once in `protocol/events.schema.json`.
 
-The engine buffers at most 12 seconds of PCM and offers immutable snapshots after 3,200 fresh samples. ONNX inference is asynchronous on a serial queue. The retained mailbox has one latest-in-policy snapshot and one terminal snapshot; reset and retarget increment a generation so stale results cannot advance a new passage. Model downloads use the runner's tested task-lease ledger to coalesce callers safely.
+**Why expected-text tracking.** Open-set verse identification needs a search over 6,236 ayahs on every window and is fragile on consumer hardware. Tracking inverts the problem: the host already knows what the reciter intends, so the engine asks the model "how well does this audio explain *these* words, in order?" via CTC forced alignment, and moves a cursor. Repeats, back-tracks and short skips are handled by a bounded window around the cursor; a reciter who is clearly somewhere else triggers `needs_retry(off_target)` rather than a wrong acceptance.
 
-The public canonical unit is an ayah. Its token boundaries are independent of rendered font/line wrapping. Long ayahs use bounded internal acoustic spans, with ordered identity-backed progression and completion only on the selected ayah's final span. Greedy emission timing scopes candidate comparisons to the current span when exact observed support exists; forced alignment alone cannot manufacture completion.
+**Runtime corpus index.** Tanzil's text is shipped verbatim (that is what Tanzil permits). At startup the engine normalizes and tokenizes it with NVIDIA's SentencePiece tokenizer (via the `tokenizers` crate) into per-ayah word/token tables plus confuser indices, in well under a second, and caches the result in the user's app cache. Nothing derived from the text is distributed.
 
-CTC scores and fuzzy ordered text support are recognition evidence, not a Tajweed judgement. The default policy retains the legacy content margin, endpoint and speech-span thresholds, but scheduling is adapted to standalone ayahs. It is not a claim of full parity with the former product's UI line scheduling. See [SWIFT-IMPLEMENTATION.md](SWIFT-IMPLEMENTATION.md) for the exact public API, presets, buffering contract and deviations.
+**Pronunciation variants.** The base model is general Arabic, so some Qur'anic spellings (fused ra, single-token "ahad", etc.) decode differently from the normalized text. `corpus/variants.json` carries the admitted variants per word; the aligner accepts any of them. This is where most of the accuracy over a naive transcript-diff comes from.
 
-`Tools/generate_token_map.py` derives a deterministic index from verbatim Arabic and NVIDIA's pinned tokenizer. Schema 2 uses one ayah boundary per record and regenerates nearest-confuser rows for 6,236 ayahs. The previous index's normalized words, token IDs and word-token boundaries are preserved. Original Arabic display strings and surah metadata are included in the new index. No translation or reciter recording is included.
+**Live vs terminal evaluation.** Live mode runs a cheap 2-second suffix pass on a latest-only mailbox so a UI can paint progress while the reciter speaks; the terminal pass (up to 12 s) decides acceptance. Both use the same scorer and the same policy, so what the user sees mid-line never disagrees with the final decision.
 
-Optional endpoint feature extraction remains a pure, parity-tested helper; there is no trained pronunciation classifier in this package. Experimental continuous-authority rollout and product adapters were removed. There are no Rust crates, sidecar protocols or non-Apple bindings in this implementation.
+**Sidecar.** `qrk serve` wraps the engine in a localhost WebSocket (and `--stdio`): `start` JSON → binary PCM frames → JSON events → `stop` → `summary`. It exists so that software in any language, with no native build step, can integrate in an hour.

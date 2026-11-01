@@ -1,0 +1,21 @@
+[package]
+name = "qrk-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[[bin]]
+name = "qrk"
+path = "src/main.rs"
+[dependencies]
+qrk-core = { path = "../qrk-core" }
+qrk-onnx = { path = "../qrk-onnx" }
+qrk-audio = { path = "../qrk-audio" }
+serde.workspace = true
+serde_json.workspace = true
+clap = { version = "4", features = ["derive", "env"] }
+tokio = { version = "1", features = ["full"] }
+tokio-tungstenite = "0.28"
+futures-util = "0.3"
+hound = "3.5"
+
+base64 = "0.22"

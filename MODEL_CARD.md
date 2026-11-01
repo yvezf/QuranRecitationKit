@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Task** | Arabic speech → CTC log-probabilities over a 1,025-token BPE vocabulary, used by QuranRecitationKit to track expected Qur'an words |
+| **Task** | Arabic speech → CTC log-probabilities over a 1,025-token text vocabulary, used by QuranRecitationKit to track expected Qur'an words |
 | **Base model** | NVIDIA `stt_ar_fastconformer_hybrid_large_pcd_v1.0` (FastConformer hybrid RNNT/CTC, Arabic, ~115 M params) — CC BY 4.0 |
 | **Shipped artifact** | ONNX, mixed int4/int8 quantized, audio preprocessing embedded, dual output |
 | **File size** | 88,307,457 bytes |
@@ -28,7 +28,7 @@ Maximum window used by the kit: 12 s (192,000 samples) for terminal recovery; 2 
 
 ## Vocabulary
 
-`vocab.json` — 1,025 SentencePiece BPE tokens (NVIDIA's). SHA-256 `c55877f3bff8bc3aaefc160e8c2fb88cb349088d092513d40210ccfe535e671b`. Generator-side tokenizer `tokenizer.model` SHA-256 `1fcfa104fa448c979cc2537788947c6516827f403ecdc55c4895b77d28630ba4`.
+`vocab.json` — 1,025 CTC entries (1,024 SentencePiece Unigram pieces plus blank) (NVIDIA's). SHA-256 `c55877f3bff8bc3aaefc160e8c2fb88cb349088d092513d40210ccfe535e671b`. Generator-side tokenizer `tokenizer.model` SHA-256 `1fcfa104fa448c979cc2537788947c6516827f403ecdc55c4895b77d28630ba4`.
 
 ## How the kit uses it
 
@@ -44,3 +44,12 @@ The kit never asks the model "which verse is this?" It knows which words are exp
 ## Provenance chain
 
 NVIDIA NeMo checkpoint → Cyberistic ONNX export + quantization (distributed by Tilawa v0.2.0, MIT project) → dual-output graph (this project; no node changes). No training or fine-tuning on any recitation audio was performed by this project. Thresholds and window sizes were calibrated privately against licensed recitations that are **not** redistributed.
+
+
+## Cross-platform delivery status
+
+The Rust core builds its normalized index in memory from verbatim Tanzil Arabic. Only a user-local cache contains that generated index. NVIDIA's tokenizer was converted from SentencePiece Unigram (not BPE) to Hugging Face tokenizer JSON; all 77,441 source words were compared against SentencePiece without mismatches. The optional local parity test additionally compares every numbered ayah's words, token IDs and word boundaries with the prior oracle. Visual line-wrap boundaries are not a canonical engine unit.
+
+Release v1 is still the pinned model. No model file, remote repository or release asset has been uploaded by this work. Cyberistic's custom preprocessing/export rights remain qualified in THIRD_PARTY_NOTICES.md; integrity verification alone is not a license grant. The clean NVIDIA/NeMo candidate pipeline under model/export is prepared but not executed or promoted. Synthetic parity is a gate, not evidence of real-recitation accuracy.
+
+CPU execution is the default. ONNX Runtime 1.24.2 is used locally; the Rust wrapper is ort 2.0.0-rc.12/API 24. Distribution helpers can embed the platform CPU runtime, materializing verified runtime bytes in a user-local cache. Windows Microsoft runtime prerequisites still apply to the chosen ONNX Runtime binary. Actual Windows execution remains a CI/user-device check, separate from cross-compilation.

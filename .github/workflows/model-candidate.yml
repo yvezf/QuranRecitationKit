@@ -1,0 +1,25 @@
+name: Clean NVIDIA model candidate (manual)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  candidate:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: sudo apt-get update && sudo apt-get install -y libsndfile1 ffmpeg
+      - run: pip install -r model/export/requirements.txt
+      - run: python model/export/export_clean.py --out candidate
+      - name: Compare with existing v1 release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download model-v1 --pattern fastconformer_full_mixed.onnx --dir baseline
+          python model/export/check_parity.py --v1 baseline/fastconformer_full_mixed.onnx --v2 candidate/candidate-int8.onnx --report candidate/parity.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: model-candidate-unvalidated, path: candidate/}

@@ -1,0 +1,60 @@
+name: Build release artifacts
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  native:
+    strategy:
+      matrix:
+        include:
+          - {os: macos-14, rid: darwin-arm64}
+          - {os: macos-15-intel, rid: darwin-x64}
+          - {os: windows-2022, rid: win32-x64}
+          - {os: ubuntu-22.04, rid: linux-x64}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev pkg-config
+      - run: pip install onnxruntime==1.24.2
+      - name: Embed platform CPU runtime
+        shell: bash
+        run: |
+          python - <<'PY'
+          import onnxruntime,pathlib,os
+          c=pathlib.Path(onnxruntime.__file__).parent/'capi'
+          files=[p for p in c.iterdir() if p.name.startswith('libonnxruntime.') and ('.so' in p.name or p.suffix=='.dylib') or p.name=='onnxruntime.dll']
+          path=str(sorted(files)[0])
+          with open(os.environ['GITHUB_ENV'],'a')as f: f.write('QRK_EMBED_RUNTIME='+path+'\nORT_DYLIB_PATH='+path+'\n')
+          PY
+      - run: cargo build --manifest-path core/Cargo.toml --workspace --release --locked
+      - run: cargo test --manifest-path core/Cargo.toml --workspace --release --locked
+      - run: npm --prefix bindings/node ci --ignore-scripts
+      - run: npm --prefix bindings/node run build
+      - run: npm --prefix bindings/node test
+      - run: python tools/package_native.py --rid ${{ matrix.rid }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.rid }}
+          path: |
+            dist/qrk-${{ matrix.rid }}.zip
+            bindings/node/prebuilds/
+  publish:
+    needs: native
+    runs-on: ubuntu-22.04
+    permissions: {contents: write}
+    steps:
+      - uses: actions/download-artifact@v4
+        with: {path: artifacts}
+      - name: Attach built archives to a draft release
+        env: {GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}', TAG: '${{ github.ref_name }}'}
+        run: |
+          gh release view "$TAG" || gh release create "$TAG" --draft --title "$TAG" --notes 'Built artifacts; review before publishing. Model assets are separate.'
+          find artifacts -name '*.zip' -exec gh release upload "$TAG" {} --clobber \;

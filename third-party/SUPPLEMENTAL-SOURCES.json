@@ -1,0 +1,238 @@
+[
+  {
+    "package": "cesu8",
+    "version": "1.1.0",
+    "revision": "v1.1.0",
+    "notices": []
+  },
+  {
+    "package": "dasp_sample",
+    "version": "0.11.0",
+    "revision": "97c3bb9b2363c0b46ac1633858bf1054fd02a980",
+    "notices": [
+      {
+        "file": "third-party/supplemental/dasp_sample-0.11.0-LICENSE-MIT",
+        "url": "https://raw.githubusercontent.com/rustaudio/sample/97c3bb9b2363c0b46ac1633858bf1054fd02a980/LICENSE-MIT"
+      },
+      {
+        "file": "third-party/supplemental/dasp_sample-0.11.0-LICENSE-APACHE",
+        "url": "https://raw.githubusercontent.com/rustaudio/sample/97c3bb9b2363c0b46ac1633858bf1054fd02a980/LICENSE-APACHE"
+      }
+    ]
+  },
+  {
+    "package": "dispatch2",
+    "version": "0.3.1",
+    "revision": "8852b424193ca41602281b3d7540d7c8ed51e49a",
+    "notices": [
+      {
+        "file": "third-party/supplemental/dispatch2-0.3.1-LICENSE.md",
+        "url": "https://raw.githubusercontent.com/madsmtm/objc2/8852b424193ca41602281b3d7540d7c8ed51e49a/LICENSE.md"
+      }
+    ]
+  },
+  {
+    "package": "jni-sys-macros",
+    "version": "0.4.1",
+    "revision": "64d77b7a5f119d7b55b4e2c169a4668067ff59e6",
+    "notices": [
+      {
+        "file": "third-party/supplemental/jni-sys-macros-0.4.1-LICENSE-MIT",
+        "url": "https://raw.githubusercontent.com/jni-rs/jni-sys/64d77b7a5f119d7b55b4e2c169a4668067ff59e6/LICENSE-MIT"
+      },
+      {
+        "file": "third-party/supplemental/jni-sys-macros-0.4.1-LICENSE-APACHE",
+        "url": "https://raw.githubusercontent.com/jni-rs/jni-sys/64d77b7a5f119d7b55b4e2c169a4668067ff59e6/LICENSE-APACHE"
+      }
+    ]
+  },
+  {
+    "package": "ndk",
+    "version": "0.9.0",
+    "revision": "49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25",
+    "notices": [
+      {
+        "file": "third-party/supplemental/ndk-0.9.0-LICENSE-MIT",
+        "url": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/LICENSE-MIT"
+      },
+      {
+        "file": "third-party/supplemental/ndk-0.9.0-LICENSE-APACHE",
+        "url": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/LICENSE-APACHE"
+      }
+    ]
+  },
+  {
+    "package": "ndk-context",
+    "version": "0.1.1",
+    "revision": "10f2ba388fca20f7349996ebae26ccda7a6fda5c",
+    "notices": [
+      {
+        "file": "third-party/supplemental/ndk-context-0.1.1-LICENSE-MIT",
+        "url": "https://raw.githubusercontent.com/rust-windowing/android-ndk-rs/10f2ba388fca20f7349996ebae26ccda7a6fda5c/LICENSE-MIT"
+      },
+      {
+        "file": "third-party/supplemental/ndk-context-0.1.1-LICENSE-APACHE",
+        "url": "https://raw.githubusercontent.com/rust-windowing/android-ndk-rs/10f2ba388fca20f7349996ebae26ccda7a6fda5c/LICENSE-APACHE"
+      }
+    ]
+  },
+  {
+    "package": "ndk-sys",
+    "version": "0.6.0+11769913",
+    "revision": "49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25",
+    "notices": [
+      {
+        "file": "third-party/supplemental/ndk-sys-0.6.0+11769913-LICENSE-MIT",
+        "url": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/LICENSE-MIT"
+      },
+      {
+        "file": "third-party/supplemental/ndk-sys-0.6.0+11769913-LICENSE-APACHE",
+        "url": "https://raw.githubusercontent.com/rust-mobile/ndk/49bbbba16c58ff63cb8a0ad0eca5a9fb7ecaec25/LICENSE-APACHE"
+      }
+    ]
+  },
+  {
+    "package": "objc2",
+    "version": "0.6.5",
+    "revision": "d7d2fa23ceaa5e6096c923b081040e5d81b3b9df",
+    "notices": [
+      {
+        "file": "third-party/supplemental/objc2-0.6.5-LICENSE.md",
+        "url": "https://raw.githubusercontent.com/madsmtm/objc2/d7d2fa23ceaa5e6096c923b081040e5d81b3b9df/LICENSE.md"
+      }
+    ]
+  },
+  {
+    "package": "objc2-audio-toolbox",
+    "version": "0.3.2",
+    "revision": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+    "notices": [
+      {
+        "file": "third-party/supplemental/objc2-audio-toolbox-0.3.2-LICENSE.md",
+        "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md"
+      }
+    ]
+  },
+  {
+    "package": "objc2-core-audio",
+    "version": "0.3.2",
+    "revision": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+    "notices": [
+      {
+        "file": "third-party/supplemental/objc2-core-audio-0.3.2-LICENSE.md",
+        "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md"
+      }
+    ]
+  },
+  {
+    "package": "objc2-core-audio-types",
+    "version": "0.3.2",
+    "revision": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+    "notices": [
+      {
+        "file": "third-party/supplemental/objc2-core-audio-types-0.3.2-LICENSE.md",
+        "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md"
+      }
+    ]
+  },
+  {
+    "package": "objc2-core-foundation",
+    "version": "0.3.2",
+    "revision": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+    "notices": [
+      {
+        "file": "third-party/supplemental/objc2-core-foundation-0.3.2-LICENSE.md",
+        "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md"
+      }
+    ]
+  },
+  {
+    "package": "objc2-encode",
+    "version": "4.1.0",
+    "revision": "8d214f5477365ffcbcbb7de058c86ed9a518efb7",
+    "notices": [
+      {
+        "file": "third-party/supplemental/objc2-encode-4.1.0-LICENSE.md",
+        "url": "https://raw.githubusercontent.com/madsmtm/objc2/8d214f5477365ffcbcbb7de058c86ed9a518efb7/LICENSE.md"
+      }
+    ]
+  },
+  {
+    "package": "objc2-foundation",
+    "version": "0.3.2",
+    "revision": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+    "notices": [
+      {
+        "file": "third-party/supplemental/objc2-foundation-0.3.2-LICENSE.md",
+        "url": "https://raw.githubusercontent.com/madsmtm/objc2/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b/LICENSE.md"
+      }
+    ]
+  },
+  {
+    "package": "r-efi",
+    "version": "5.3.0",
+    "revision": "97b55bed1c2c91dcbf787674849f05337ff80b33",
+    "notices": []
+  },
+  {
+    "package": "r-efi",
+    "version": "6.0.0",
+    "revision": "7e1b0322d31d625f81a5656096330934f9cd835d",
+    "notices": []
+  },
+  {
+    "package": "napi",
+    "version": "2.16.17",
+    "revision": "f2178312d0e3e07beecc19836b91716a229107d3",
+    "notices": [
+      {
+        "file": "third-party/supplemental/napi-2.16.17-LICENSE",
+        "url": "https://raw.githubusercontent.com/napi-rs/napi-rs/f2178312d0e3e07beecc19836b91716a229107d3/LICENSE"
+      }
+    ]
+  },
+  {
+    "package": "napi-build",
+    "version": "2.6.0",
+    "revision": "a94cef33f62e74682963dd085e283f52dcec2600",
+    "notices": [
+      {
+        "file": "third-party/supplemental/napi-build-2.6.0-LICENSE",
+        "url": "https://raw.githubusercontent.com/napi-rs/napi-rs/a94cef33f62e74682963dd085e283f52dcec2600/LICENSE"
+      }
+    ]
+  },
+  {
+    "package": "napi-derive",
+    "version": "2.16.13",
+    "revision": "a312b7eb4e12d3e0a3e9770429ee05c333947a39",
+    "notices": [
+      {
+        "file": "third-party/supplemental/napi-derive-2.16.13-LICENSE",
+        "url": "https://raw.githubusercontent.com/napi-rs/napi-rs/a312b7eb4e12d3e0a3e9770429ee05c333947a39/LICENSE"
+      }
+    ]
+  },
+  {
+    "package": "napi-derive-backend",
+    "version": "1.0.75",
+    "revision": "a312b7eb4e12d3e0a3e9770429ee05c333947a39",
+    "notices": [
+      {
+        "file": "third-party/supplemental/napi-derive-backend-1.0.75-LICENSE",
+        "url": "https://raw.githubusercontent.com/napi-rs/napi-rs/a312b7eb4e12d3e0a3e9770429ee05c333947a39/LICENSE"
+      }
+    ]
+  },
+  {
+    "package": "napi-sys",
+    "version": "2.4.0",
+    "revision": "f1b8ab5e645e674df33c796ef75aa278cd1b4a31",
+    "notices": [
+      {
+        "file": "third-party/supplemental/napi-sys-2.4.0-LICENSE",
+        "url": "https://raw.githubusercontent.com/napi-rs/napi-rs/f1b8ab5e645e674df33c796ef75aa278cd1b4a31/LICENSE"
+      }
+    ]
+  }
+]

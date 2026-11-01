@@ -1,26 +1,51 @@
-name: Swift CI
+name: Cross-platform CI
 on:
   push:
     branches: [main]
   pull_request:
+permissions:
+  contents: read
 jobs:
-  build-and-test:
-    runs-on: macos-15
+  phase-a:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, macos-15-intel, windows-2022, ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Swift version
-        run: swift --version
-      - name: Build
-        run: swift build -v
-      - name: Test without audio or a model download
-        run: swift test -v
-      - name: Verify deterministic token map
+      - uses: dtolnay/rust-toolchain@stable
+        with: {components: rustfmt, clippy}
+      - uses: Swatinem/rust-cache@v2
+        with: {workspaces: core}
+      - name: Linux audio build dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev pkg-config
+      - run: cargo fmt --manifest-path core/Cargo.toml --all --check
+      - run: cargo clippy --manifest-path core/Cargo.toml --workspace --all-targets -- -D warnings
+      - run: cargo build --manifest-path core/Cargo.toml --workspace --release --locked
+      - run: cargo test --manifest-path core/Cargo.toml --workspace --locked
+      - run: cargo run --manifest-path core/Cargo.toml -p qrk-cli --release -- selftest
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install onnxruntime==1.24.2
+      - name: Locate ONNX Runtime
+        shell: bash
         run: |
-          python3 -m venv Tools/.venv
-          Tools/.venv/bin/pip install -r Tools/requirements.txt
-          TOKEN_MAP_PYTHON=Tools/.venv/bin/python Tools/verify_token_map.sh
-      - name: Build iOS example
-        run: |
-          xcodebuild -project Example/RecitationDemo/RecitationDemo.xcodeproj \
-            -scheme RecitationDemo -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath /private/tmp/HearBuild-shared CODE_SIGNING_ALLOWED=NO build
+          python - <<'PY'
+          import onnxruntime, pathlib, os
+          capi=pathlib.Path(onnxruntime.__file__).parent/'capi'
+          files=[p for p in capi.iterdir() if p.name.startswith('libonnxruntime.') and ('.so' in p.name or p.suffix=='.dylib') or p.name=='onnxruntime.dll']
+          with open(os.environ['GITHUB_ENV'],'a') as f: f.write('ORT_DYLIB_PATH='+str(sorted(files)[0])+'\n')
+          PY
+      - run: npm --prefix bindings/node ci --ignore-scripts
+      - run: npm --prefix bindings/node run build
+      - run: npm --prefix bindings/node test
+  swift-reference:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build retained Swift reference (no generated corpus distributed)
+        run: swift build --package-path bindings/swift -v

@@ -1,11 +1,19 @@
 # Contributing
 
-Code contributions are MIT. Keep recognition independent of host UI and product policy. Public API changes need a design note and changelog entry.
+Thanks for helping. A few ground rules keep this project easy to trust.
 
-- Do not commit model weights or any recitation recording, PCM, spectrogram or embedding. Tests use synthetic logits/signals; keep real-audio checks local.
-- Preserve third-party licenses and provenance. Do not import material from non-commercial model/corpus lines.
-- Arabic source strings in `Tools/data/quran-uthmani.json` must remain verbatim. Never hand-edit the matching index: regenerate with the pinned tokenizer and run `Tools/verify_token_map.sh`. Review Tanzil's additional terms before changing distribution.
-- No telemetry or release logging. Never put credentials, machine paths, device IDs or account configuration into source or test fixtures.
-- Keep documentation consistent with implemented products. Cross-platform plans must not be advertised as completed bindings.
+- **Licenses.** Code contributions are MIT. Do not add model weights, Qur'an text, or audio under any other terms without discussing first in an issue. Nothing derived from NPL-1.2 material (Quran-Lab Zipformer, phoneme corpora) can be merged — it is non-commercial share-alike and would change the license of the whole project.
+- **No recitation audio in the repo.** Tests use synthetic logits and synthetic signals (`tests/fixtures/`). If you need real audio to verify a change, keep it local and describe the result in the PR.
+- **Qur'an text is verbatim only.** `corpus/quran-uthmani.json` is Tanzil's text and is never edited. The normalized index is built at runtime; never commit a generated one.
+- **One engine.** Behaviour lives in `core/qrk-core`. Bindings are thin; if you find yourself adding logic to a binding, it belongs in the core.
+- **Build must stay green on all four CI targets** (macOS arm64/x64, Windows x64, Linux x64): `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test --workspace`, plus each binding's own build.
+- **Public API or protocol changes** go through a short design note in the PR, a `protocol/events.schema.json` update if events change, and a CHANGELOG entry.
+- **Be kind in review.**
 
-Run `swift build -v`, `swift test -v`, the token-map verifier, and the example simulator build from the README before a pull request. Tests do not download models or require audio. Use `QRK_MODEL_DIR` only for an additional opt-in local model test.
+Run locally:
+
+```sh
+cd core && cargo fmt --check && cargo clippy --workspace -- -D warnings && cargo test --workspace
+cargo run -p qrk-cli -- model fetch
+cargo run -p qrk-cli -- wav --surah 1 path/to/your/own/fatiha.wav --json
+```

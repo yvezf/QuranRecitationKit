@@ -1,0 +1,9 @@
+[package]
+name = "qrk-audio"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+cpal = "0.16"
+rubato = "0.16"
+thiserror.workspace = true

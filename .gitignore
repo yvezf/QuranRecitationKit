@@ -24,3 +24,16 @@ __pycache__/
 **/*.node
 **/quran-token-map.json
 **/quran-token-map.manifest.json
+
+.runtime-venv/
+**/*.dylib
+**/*.dll
+**/*.so
+**/*.a
+**/*.lib
+
+.cross-tools/
+
+model/export/out/
+candidate/
+dist/

@@ -1,0 +1,8 @@
+{
+  "source_sha256": "1fcfa104fa448c979cc2537788947c6516827f403ecdc55c4895b77d28630ba4",
+  "json_sha256": "beca3d40c1365b57ed3c2b9b9837161b089225d34a86057569d9245cb7b102f0",
+  "sentencepiece": "0.2.1",
+  "tokenizers": "0.22.2",
+  "verified_word_count": 77441,
+  "unique_word_count": 14657
+}

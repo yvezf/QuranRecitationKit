@@ -1,0 +1,17 @@
+{
+ "$schema":"https://json-schema.org/draft/2020-12/schema",
+ "$id":"https://quranrecitationkit.local/events.schema.json",
+ "title":"QuranRecitationKit events and sidecar replies",
+ "$defs":{
+  "verse":{"type":"object","required":["surah","ayah","confidence","duration_seconds"],"properties":{"surah":{"type":"integer","minimum":1,"maximum":114},"ayah":{"type":"integer","minimum":1},"confidence":{"type":"number","minimum":0,"maximum":1},"duration_seconds":{"type":"number","minimum":0}}}
+ },
+ "oneOf":[
+  {"type":"object","required":["type","state"],"properties":{"type":{"const":"state"},"state":{"enum":["idle","listening","evaluating","ended"]}},"additionalProperties":false},
+  {"type":"object","required":["type","text","confidence"],"properties":{"type":{"const":"raw_transcript"},"text":{"type":"string"},"confidence":{"type":"number","minimum":0,"maximum":1}},"additionalProperties":false},
+  {"type":"object","required":["type","reason"],"properties":{"type":{"const":"needs_retry"},"reason":{"enum":["inconclusive","off_target","noise","too_short"]}},"additionalProperties":false},
+  {"type":"object","required":["type","surah","ayah","word_index","total_words","matched_word_indices","confidence"],"properties":{"type":{"const":"word_progress"},"surah":{"type":"integer","minimum":1,"maximum":114},"ayah":{"type":"integer","minimum":1},"word_index":{"type":"integer","minimum":0},"total_words":{"type":"integer","minimum":1},"matched_word_indices":{"type":"array","uniqueItems":true,"items":{"type":"integer","minimum":0}},"confidence":{"type":"number","minimum":0,"maximum":1}},"additionalProperties":false},
+  {"allOf":[{"$ref":"#/$defs/verse"},{"type":"object","required":["type"],"properties":{"type":{"const":"verse_match"}}}]},
+  {"type":"object","required":["type","verses","transcript","duration"],"properties":{"type":{"const":"summary"},"verses":{"type":"array","items":{"$ref":"#/$defs/verse"}},"transcript":{"type":"string"},"duration":{"type":"number","minimum":0},"events":{"type":"array","items":{"$ref":"#"}},"dropped_chunks":{"type":"integer","minimum":0}},"additionalProperties":false},
+  {"type":"object","required":["type","message"],"properties":{"type":{"const":"error"},"message":{"type":"string"}},"additionalProperties":false}
+ ]
+}
