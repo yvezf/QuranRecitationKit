@@ -7,7 +7,7 @@ Offline Quran recitation tracking for your app. Supply the passage you expect an
 
 **One Rust engine. C ABI. Swift, Node, Python and .NET bindings. Local WebSocket/stdio helper.** Native CI passed on macOS arm64/x64, Windows x64 and Linux x64, including the public model download and actual ONNX inference. The iOS SwiftUI example also builds. [Releases](https://github.com/yvezf/QuranRecitationKit/releases/tag/v0.1.0) · [Model](https://github.com/yvezf/QuranRecitationKit/releases/tag/model-v1) · [Publication verification](docs/PUBLICATION-2026-11-01.md).
 
-SwiftPM consumers should use **0.1.1 or later**. This source-only patch fixes tagged manifest resolution and reuses the checksum-verified v0.1.0 native archive; other platform artifacts remain v0.1.0. [SwiftPM patch release](https://github.com/yvezf/QuranRecitationKit/releases/tag/v0.1.1).
+SwiftPM consumers should use **0.1.1 or later**. This manifest patch fixes tagged resolution and reuses the checksum-verified v0.1.0 native archive; other platform artifacts remain v0.1.0. [SwiftPM patch release](https://github.com/yvezf/QuranRecitationKit/releases/tag/v0.1.1).
 
 ## Pick your door
 
@@ -19,6 +19,27 @@ SwiftPM consumers should use **0.1.1 or later**. This source-only patch fixes ta
 | Node | Download the matching `node-<platform>.zip` into the source package; [Node guide](bindings/node/README.md) |
 | Python 3.9+ | Install an attached platform wheel; [Python guide](bindings/python/README.md) |
 | .NET | Use the attached four-platform `.nupkg` as a local feed; [.NET guide](bindings/dotnet/README.md) |
+
+## Why this one
+
+One native core, every platform, any language. Code is MIT; NVIDIA weights are CC BY 4.0; Tanzil text is CC BY 3.0 with its verbatim-text conditions. The current v1 export's preprocessing rights remain **unverified**; the clean v2 candidate must pass validation before replacing it. See [third-party notices](THIRD_PARTY_NOTICES.md#2-nvidia-acoustic-weights-vocabulary-and-tokenizer).
+
+### How it compares (as of 2026-11-01)
+
+This compares published integration paths and stated terms, rather than recognition accuracy. Platform listings are declarations unless a verification is linked. “Unverified” means the checked sources did not establish that claim.
+
+| Project | Integrates from | Platforms | Code license | Model/data license |
+|---|---|---|---|---|
+| [QuranRecitationKit (this)](https://github.com/yvezf/QuranRecitationKit) | Any language via C ABI or `qrk` sidecar; Swift, Node, Python, .NET | macOS 14+, Windows x64, Linux x64, iOS 16+; [verification](docs/PUBLICATION-2026-11-01.md) | [MIT](LICENSE) | NVIDIA CC BY 4.0 weights; Tanzil CC BY 3.0 text with verbatim conditions; [v1 export preprocessing rights unverified](THIRD_PARTY_NOTICES.md#2-nvidia-acoustic-weights-vocabulary-and-tokenizer) |
+| [Tilawa](https://github.com/yazinsai/tilawa) | TypeScript: web, Node, React Native | Browser, Node, React Native | MIT | [Default Zipformer model/phoneme corpus: NPL-1.2](https://github.com/yazinsai/tilawa/blob/2f2617460dc4a6b967e0cc49fa04804bbf22ec69/NOTICE.md) (no paid features; share-alike); FastConformer path: NVIDIA CC BY 4.0 |
+| [recite_quran](https://pub.dev/packages/recite_quran/versions/1.0.5) | Flutter/Dart package | Android, iOS, Linux, macOS, web, Windows, [per pub.dev](https://pub.dev/packages/recite_quran) | Custom [“Sacred Covenant”](https://pub.dev/packages/recite_quran/license); pub.dev labels it unknown | Referenced [Quran-Lab Zipformer-v3: NPL-1.2](https://huggingface.co/Quran-Lab/zipformer_p-arabic-v3); other bundled data terms unverified |
+| [QuranRecognitionKit](https://github.com/akhandafm17/QuranRecognitionKit) | Swift package | iOS 17+, macOS 14+, [declared in manifest](https://github.com/akhandafm17/QuranRecognitionKit/blob/81b769ab52a054f773d1c0127f57315fdf02350c/Package.swift) | MIT | [NVIDIA FastConformer CC BY 4.0, per model notice](https://github.com/akhandafm17/QuranRecognitionKit/blob/81b769ab52a054f773d1c0127f57315fdf02350c/MODEL_NOTICE.md); bundled Qur'an text terms unverified |
+| [Real-Time Quran recitation tracker](https://github.com/yayaiu6/Real-Time-Quran-recitation-tracker-System) | Python Flask/Socket.IO web app | Python server + browser client; specific OS support unverified | MIT | Recommended [fine-tuned NeMo Conformer: MIT, per model card](https://huggingface.co/MostafaAhmed98/Conformer-CTC-Arabic-ASR); bundled checkpoint/text provenance unverified; Groq Whisper is an alternative backend |
+| [Tarteel](https://tarteel.ai) | App; [no public recognition API offered](https://support.tarteel.ai/en/articles/12414464-do-you-have-an-api-i-can-use) | iOS, Android; [Apple Silicon Mac through the iOS app](https://support.tarteel.ai/en/articles/12414477-can-i-use-tarteel-on-my-computer) | Proprietary [service/app terms](https://tarteel.ai/terms) | Redistributable recognition-model/data license unverified; published QUL resources are separate |
+
+Tilawa is the ancestor of this engine's normalizer, decoder and aligner; see [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md).
+
+[Cell-by-cell sources and qualifications](docs/COMPARISON-2026-11-01.md).
 
 **npm, PyPI and NuGet registry publication has not been performed.** Packages and native binaries are available as GitHub release assets. No registry account is needed to use those files. Rust crates are source/workspace dependencies, not claimed published to crates.io.
 
@@ -33,7 +54,7 @@ SwiftPM consumers should use **0.1.1 or later**. This source-only patch fixes ta
 
 The Linux CLI needs ALSA runtime libraries. Windows may need Microsoft's current VC++ Redistributable. Desktop helpers embed the platform CPU ONNX Runtime and extract hash-verified runtime bytes into a user-local cache. No Node or Python interpreter is required for the helper. Host applications own signing/notarization and microphone permissions.
 
-## Fastest integration: any language
+## Start with the sidecar: any language
 
 Extract the platform ZIP, then:
 
@@ -43,7 +64,7 @@ Extract the platform ZIP, then:
 ./qrk serve --stdio
 ```
 
-On Windows use `.\qrk.exe`. The first command downloads the separate, hash-pinned model; recognition then works offline. A manual model directory can be supplied with `--model /path/to/model`.
+On Windows use `.\qrk.exe`. The model-fetch command downloads the separate, hash-pinned model; recognition then works offline. A manual model directory can be supplied with `--model /path/to/model`.
 
 Write JSON lines to stdin:
 
@@ -53,7 +74,7 @@ Write JSON lines to stdin:
 {"type":"stop"}
 ```
 
-Stdout returns JSON events and a final summary. For WebSocket binary PCM, run `qrk serve --port 7877 --token YOUR_LOCAL_SECRET`; it binds 127.0.0.1 only. [Protocol and short JS/Python/C# clients](protocol/SIDECAR.md).
+Stdout returns JSON events and a final summary. For WebSocket binary PCM, run `qrk serve --port 7877 --token YOUR_LOCAL_SECRET`; it binds to the loopback address 127.0.0.1. [Protocol and short JS/Python/C# clients](protocol/SIDECAR.md).
 
 Other commands: `qrk wav --surah 112 my-reading.wav --json`, `qrk mic --surah 112 --json`, `qrk devices`. WAV accepts PCM16/Float32 and resamples. Capture is explicit and subject to OS permission; drops/errors are reported.
 
@@ -154,7 +175,7 @@ Confidence is an uncalibrated CTC margin, not a probability of correct recitatio
 
 [Model v1](https://github.com/yvezf/QuranRecitationKit/releases/tag/model-v1): 88,307,457 bytes, SHA-256 `822534428f1ed54eb802a9c43d4ecbabdfd8ba346b4d88d710414b0bbe7b4d69`. `qrk model fetch`, Python/.NET model-fetch helpers and Swift `ModelPack.download()` use the configured public release and verify its exact size/hash. No acoustic weights or recitation audio are in Git or SDK archives.
 
-Only verbatim [Tanzil](https://tanzil.net) Arabic plus attribution is distributed. Normalized/tokenized indices are built in memory and may be cached on the user's machine. NVIDIA's Unigram tokenizer conversion was compared against SentencePiece on all 77,441 source words. Source commit and model release are distinguished in the [notices](THIRD_PARTY_NOTICES.md).
+Distributed Arabic text is verbatim [Tanzil](https://tanzil.net), with attribution. Normalized/tokenized indices are built in memory and may be cached on the user's machine. NVIDIA's Unigram tokenizer conversion was compared against SentencePiece on all 77,441 source words. Source commit and model release are distinguished in the [notices](THIRD_PARTY_NOTICES.md).
 
 V1 export/preprocessing provenance remains qualified; attribution does not resolve missing permission. The clean NVIDIA/NeMo v2 candidate pipeline is prepared but unvalidated and unpromoted. See [MODEL_CARD.md](MODEL_CARD.md) and [model/export](model/export/README.md).
 
@@ -174,8 +195,8 @@ npm --prefix bindings/node test
 
 For source-built inference, set `ORT_DYLIB_PATH` to an ONNX Runtime 1.24-compatible native library, or `QRK_EMBED_RUNTIME` when building to embed it. `tools/prepare_runtime.py` prepares the pinned runtime in CI, including Intel Mac linkage from Microsoft's static archive. To rebuild the Apple native archive rather than use the published one, run `python3 tools/build_xcframework.py`.
 
-Tests need no audio. Set `QRK_MODEL_DIR` for native inference tests and `QRK_PARITY_TOKEN_MAP` for a local prior-index comparison. CI downloads and verifies model-v1 explicitly and enables the model tests; generated matching indices remain user-local. [Publication verification](docs/PUBLICATION-2026-11-01.md) includes fresh-clone commands and actual CI links. [Phase A](docs/PHASE-A-VERIFICATION.md) and [Phase B](docs/PHASE-B-VERIFICATION.md) are historical extraction reports; their pre-publication qualifications are superseded only where the publication report provides new evidence. [Maintainer release guide](docs/RELEASING.md).
+Tests need no audio. Set `QRK_MODEL_DIR` for native inference tests and `QRK_PARITY_TOKEN_MAP` for a local prior-index comparison. CI downloads and verifies model-v1 explicitly and enables the model tests; generated matching indices remain user-local. [Publication verification](docs/PUBLICATION-2026-11-01.md) includes fresh-clone commands and actual CI links. [Phase A](docs/PHASE-A-VERIFICATION.md) and [Phase B](docs/PHASE-B-VERIFICATION.md) are historical extraction reports; their pre-publication qualifications are superseded where the publication report provides new evidence. [Maintainer release guide](docs/RELEASING.md).
 
 ## License
 
-Project code: MIT, Yousef Alabadi. Portions derive from yazinsai's Tilawa MIT source pin, distinct from its v0.2.0 model release. NVIDIA weights/tokenizer: CC BY 4.0. Tanzil Arabic: CC BY 3.0 with additional verbatim-only conditions. Runtime and binding dependencies retain their notices. Carry [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), `third-party/`, and the corpus notice with redistribution.
+Project code: MIT, Yousef Alabadi. Portions derive from yazinsai's Tilawa MIT source pin, distinct from its v0.2.0 model release. NVIDIA weights/tokenizer: CC BY 4.0. Tanzil Arabic: CC BY 3.0 with additional verbatim-text conditions. Runtime and binding dependencies retain their notices. Carry [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), `third-party/`, and the corpus notice with redistribution.
