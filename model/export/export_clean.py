@@ -11,6 +11,7 @@ import torch
 import onnx
 from nemo.collections.asr.models import EncDecHybridRNNTCTCBPEModel
 from onnxruntime.quantization import CalibrationDataReader, QuantFormat, QuantType, quantize_static
+from fetch_checkpoint import source_descriptor, verify_checkpoint
 HIDDEN='/encoder/layers.16/norm_out/LayerNormalization_output_0'
 class RawAudioCTC(torch.nn.Module):
     def __init__(self,model):
@@ -29,7 +30,14 @@ class Calibration(CalibrationDataReader):
     def get_next(self):return next(self.samples,None)
 def main():
     p=argparse.ArgumentParser();p.add_argument('--out',type=Path,required=True);p.add_argument('--checkpoint',type=Path);p.add_argument('--int4',action='store_true');args=p.parse_args();args.out.mkdir(parents=True,exist_ok=True)
-    model=EncDecHybridRNNTCTCBPEModel.restore_from(str(args.checkpoint),map_location='cpu') if args.checkpoint else EncDecHybridRNNTCTCBPEModel.from_pretrained('stt_ar_fastconformer_hybrid_large_pcd_v1.0',map_location='cpu')
+    checkpoint=args.checkpoint
+    if checkpoint is None:
+        checkpoint=args.out.parent/'checkpoint'/'nvidia.nemo'
+        subprocess.run([sys.executable,str(Path(__file__).with_name('fetch_checkpoint.py')),'--out',str(checkpoint)],check=True)
+    source_receipt=source_descriptor()
+    verify_checkpoint(checkpoint,source_receipt)
+    (args.out/'source.json').write_text(json.dumps(source_receipt,indent=2)+'\n')
+    model=EncDecHybridRNNTCTCBPEModel.restore_from(str(checkpoint),map_location='cpu')
     model.eval();model.freeze();model.preprocessor.featurizer.dither=0.0
     if hasattr(model.preprocessor.featurizer,'pad_to'):model.preprocessor.featurizer.pad_to=0
     wrapper=RawAudioCTC(model).eval();wave=torch.zeros((1,32000),dtype=torch.float32);length=torch.tensor([32000],dtype=torch.int64)
@@ -45,7 +53,7 @@ def main():
         fourbit.process()
         fourbit.model.save_model_to_file(str(quantized),use_external_data_format=False)
     onnx.checker.check_model(onnx.load(str(quantized)))
-    metadata={'status':'candidate-unvalidated','base':'NVIDIA stt_ar_fastconformer_hybrid_large_pcd_v1.0','sha256':hashlib.sha256(quantized.read_bytes()).hexdigest(),'size':quantized.stat().st_size,'calibration':'deterministic synthetic sine signals only; no reciter audio','int4':bool(args.int4)}
+    metadata={'status':'candidate-unvalidated','base':'NVIDIA stt_ar_fastconformer_hybrid_large_pcd_v1.0','source':source_receipt,'sha256':hashlib.sha256(quantized.read_bytes()).hexdigest(),'size':quantized.stat().st_size,'calibration':'deterministic synthetic sine signals only; no reciter audio','int4':bool(args.int4)}
     (args.out/'candidate.json').write_text(json.dumps(metadata,indent=2)+'\n')
     (args.out/'environment.txt').write_text(subprocess.check_output([sys.executable,'-m','pip','freeze'],text=True))
 if __name__=='__main__':main()

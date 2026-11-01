@@ -1,0 +1,9 @@
+{
+  "repository": "nvidia/stt_ar_fastconformer_hybrid_large_pcd_v1.0",
+  "revision": "7f32349d952f42a28dce979ba73270aa2bbdfa89",
+  "file": "stt_ar_fastconformer_hybrid_large_pcd_v1.0.nemo",
+  "size": 459233280,
+  "sha256": "d29d19d7c054a5fc010ac6815e9cbb0dd1b21a30e0a7f7f2982e1fecaf0c3e31",
+  "license": "CC-BY-4.0",
+  "url": "https://huggingface.co/nvidia/stt_ar_fastconformer_hybrid_large_pcd_v1.0/resolve/7f32349d952f42a28dce979ba73270aa2bbdfa89/stt_ar_fastconformer_hybrid_large_pcd_v1.0.nemo"
+}
