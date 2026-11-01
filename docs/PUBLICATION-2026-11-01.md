@@ -103,3 +103,21 @@ A real external `.package(url: ..., from: "0.1.0")` consumer exposed a bug that 
 Fixed in source-only **v0.1.1**: both manifests inline the verified URL/checksum, use Context.packageDirectory for optional local artifacts, and the pinning tool keeps the generated manifest pins synchronized. A tagged bare-Git consumer regression passed locally and was added to CI. Published v0.1.0 binaries/weights are unchanged; v0.1.1 explicitly reuses the exact v0.1.0 archive. New SwiftPM clients should request 0.1.1 or later. No published tag was rewritten for this patch.
 
 The public prebuilt CLI also matched 78:1 locally without ORT_DYLIB_PATH. The fresh Swift CLI matched the same recording using the public default model helper. Their final transcript was `عم يتساءلون`; the recording remained local.
+
+## Final hosted and public-consumer evidence
+
+The final code CI run at `1a2c591` is fully green on all four desktop platforms and the Swift job, including the hosted tagged-Git regression: https://github.com/yvezfscarves-afk/QuranRecitationKit/actions/runs/41353882204.
+
+The first hosted regression compiled successfully but macOS killed it on launch (SIGKILL). The harness now builds, explicitly ad-hoc signs/verifies its generated test executable, then launches it separately. Hosted execution passed after that change. No host security policy, release archive, model weight or recognition policy was changed to address it.
+
+The actual public GitHub consumer was also verified, not only the local bare-Git regression. Its dependency range began at 0.1.0 and resolved the corrected 0.1.1 source tag:
+
+```text
+Computed https://github.com/yvezfscarves-afk/QuranRecitationKit.git at 0.1.1
+Working copy of https://github.com/yvezfscarves-afk/QuranRecitationKit.git resolved at 0.1.1
+Fetched .../releases/download/v0.1.0/QRKFFI.xcframework.zip from cache
+Build of product 'Smoke' complete! (6.37s)
+SWIFTPM CONSUMER PASS: tagged dependency, verified model, native inference, 114 surahs
+```
+
+Source-only patch: https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/tag/v0.1.1. Binary downloads remain the v0.1.0 release (marked Latest); Swift clients should use 0.1.1 or later. The NuGet was inspected after publication and contains exactly the four promised native RIDs. Final source scan: 156 tracked files at scan time, zero prohibited binaries/audio/generated Quran indices, translation fields, credentials or personal paths. No simulator remained booted; the shared Hear DerivedData directory was the only persistent Hear build directory.
