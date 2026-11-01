@@ -16,4 +16,16 @@ let package = Package(name: "SmokeConsumer", platforms: [.macOS(.v14)], dependen
 ''')
     (source/'main.swift').write_text('import QuranRecitationKit\nlet c = try QuranCatalog()\nprecondition(c.surahs.count == 114)\nprint("TAGGED SWIFTPM DEPENDENCY PASS")\n')
     env=dict(os.environ);env.setdefault('DEVELOPER_DIR','/Applications/Xcode.app/Contents/Developer')
-    subprocess.run(['swift','run','--package-path',str(consumer),'Smoke'],env=env,check=True)
+    subprocess.run(['swift','build','--package-path',str(consumer),'--product','Smoke'],env=env,check=True)
+    directory=subprocess.check_output(['swift','build','--package-path',str(consumer),'--show-bin-path'],env=env,text=True).strip()
+    binary=Path(directory)/'Smoke'
+    # macOS runners can retain stale launch-signature state after repeated SwiftPM links.
+    # Sign only this generated test executable; never alter host security policy or release archives.
+    subprocess.run(['/usr/bin/codesign','--force','--sign','-','--timestamp=none',str(binary)],check=True)
+    subprocess.run(['/usr/bin/codesign','--verify','--strict',str(binary)],check=True)
+    result=subprocess.run([str(binary)],env=env)
+    if result.returncode:
+        subprocess.run(['/usr/bin/codesign','-d','--verbose=4',str(binary)])
+        subprocess.run(['/usr/bin/log','show','--last','2m','--style','compact','--predicate','eventMessage CONTAINS "Smoke"'],stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+        raise SystemExit(f'Tagged SwiftPM consumer exited with {result.returncode}')
+
