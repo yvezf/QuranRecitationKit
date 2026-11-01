@@ -24,4 +24,6 @@ The first candidate statically calibrated speech activations using sine waves an
 
 The replacement uses Microsoft's ONNX Runtime tools: dynamic int8 convolution and symmetric int4 constant MatMul weights (block size 128). It needs no activation-calibration recordings or tones. NVIDIA/NeMo still provides the preprocessing and encoder; no other project's exporter or preprocessing source is imported. The smaller representation is not assumed accurate: it must pass all gates above.
 
+The source-fidelity check also exposed FP32 FFT rounding amplified by log-mel normalization on near-empty spectral bins. The wrapper therefore performs NeMo preprocessing with float64 accumulation and casts its features to float32 for the unchanged neural encoder/decoder. Both the reference and exported forward pass use that declared precision. The fixed fidelity tolerance is not raised to accommodate drift.
+
 The suite establishes behavior on the stated fixtures and platform runtimes. It is not a population accuracy benchmark or a Tajweed assessment.

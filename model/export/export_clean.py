@@ -17,8 +17,11 @@ class RawAudioCTC(torch.nn.Module):
     def __init__(self,model):
         super().__init__();self.model=model
     def forward(self,audio_signal,length):
-        features,feature_length=self.model.preprocessor(input_signal=audio_signal,length=length)
-        encoded,encoded_length=self.model.encoder(audio_signal=features,length=feature_length)
+        # Stable log-mel accumulation keeps near-empty spectral bins from
+        # amplifying FP32 FFT rounding. The licensed NeMo implementation is
+        # unchanged; the neural encoder/decoder still run in FP32.
+        features,feature_length=self.model.preprocessor(input_signal=audio_signal.to(torch.float64),length=length)
+        encoded,encoded_length=self.model.encoder(audio_signal=features.to(torch.float32),length=feature_length)
         return self.model.ctc_decoder(encoder_output=encoded),encoded.transpose(1,2)
 def main():
     p=argparse.ArgumentParser();p.add_argument('--out',type=Path,required=True);p.add_argument('--checkpoint',type=Path);args=p.parse_args();args.out.mkdir(parents=True,exist_ok=True)
@@ -44,7 +47,7 @@ def main():
     gc.collect()
     quantized=args.out/'candidate-mixed.onnx'
     quantize(source,quantized)
-    metadata={'status':'candidate-unvalidated','base':'NVIDIA stt_ar_fastconformer_hybrid_large_pcd_v1.0','source':source_receipt,'file':quantized.name,'sha256':hashlib.sha256(quantized.read_bytes()).hexdigest(),'size':quantized.stat().st_size,'quantization':'dynamic int8 convolution; symmetric int4 constant MatMul, block 128','calibration':'none; no reciter audio or non-speech activation calibration'}
+    metadata={'status':'candidate-unvalidated','base':'NVIDIA stt_ar_fastconformer_hybrid_large_pcd_v1.0','source':source_receipt,'file':quantized.name,'sha256':hashlib.sha256(quantized.read_bytes()).hexdigest(),'size':quantized.stat().st_size,'preprocessing':'NVIDIA NeMo with float64 log-mel accumulation, float32 encoder/decoder','quantization':'dynamic int8 convolution; symmetric int4 constant MatMul, block 128','calibration':'none; no reciter audio or non-speech activation calibration'}
     (args.out/'candidate.json').write_text(json.dumps(metadata,indent=2)+'\n')
     (args.out/'environment.txt').write_text(subprocess.check_output([sys.executable,'-m','pip','freeze'],text=True))
 if __name__=='__main__':main()
