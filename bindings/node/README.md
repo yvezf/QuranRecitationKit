@@ -20,4 +20,4 @@ No translation, recitation recording, generated normalized Quran index or model 
 
 ## GitHub release installation
 
-No npm registry upload has been performed. Clone https://github.com/yvezfscarves-afk/QuranRecitationKit, download the matching `node-<platform>.zip` from https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/tag/v0.1.0, and extract it into `bindings/node` so its `prebuilds/<platform>-<arch>/qrk.node` is present. In your host project run `npm install /path/to/QuranRecitationKit/bindings/node`. The package includes the selected native runtime and notices; no Rust build is needed when the matching prebuild exists.
+No npm registry upload has been performed. Clone https://github.com/yvezf/QuranRecitationKit, download the matching `node-<platform>.zip` from https://github.com/yvezf/QuranRecitationKit/releases/tag/v0.1.0, and extract it into `bindings/node` so its `prebuilds/<platform>-<arch>/qrk.node` is present. In your host project run `npm install /path/to/QuranRecitationKit/bindings/node`. The package includes the selected native runtime and notices; no Rust build is needed when the matching prebuild exists.

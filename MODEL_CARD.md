@@ -8,7 +8,7 @@
 | **File size** | 88,307,457 bytes |
 | **SHA-256** | `822534428f1ed54eb802a9c43d4ecbabdfd8ba346b4d88d710414b0bbe7b4d69` |
 | **Upstream single-output graph** | 88,307,366 bytes, SHA-256 `4767182cd92975869f81a7e32700b14ca2b04e8dc97a15ff220a8697f4639488` (Tilawa v0.2.0 release asset, produced by Cyberistic) |
-| **Distribution** | [Published model-v1 release](https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/tag/model-v1). Downloads are explicit and verified. A locally supplied model directory works immediately. |
+| **Distribution** | [Published model-v1 release](https://github.com/yvezf/QuranRecitationKit/releases/tag/model-v1). Downloads are explicit and verified. A locally supplied model directory works immediately. |
 
 ## Inputs
 

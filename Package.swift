@@ -9,7 +9,7 @@ if FileManager.default.fileExists(atPath: root.appendingPathComponent(local).pat
     binary = .binaryTarget(name: "QRKFFI", path: local)
 } else {
     // Generated release pin: version resolution evaluates this file without a source checkout.
-    binary = .binaryTarget(name: "QRKFFI", url: "https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/download/v0.1.0/QRKFFI.xcframework.zip", checksum: "8116b345ca0f1aca43b80430d02e4ccc49028e71c62848656248ac09a22e43ab")
+    binary = .binaryTarget(name: "QRKFFI", url: "https://github.com/yvezf/QuranRecitationKit/releases/download/v0.1.0/QRKFFI.xcframework.zip", checksum: "8116b345ca0f1aca43b80430d02e4ccc49028e71c62848656248ac09a22e43ab")
 }
 let package = Package(
     name: "QuranRecitationKit", platforms: [.iOS(.v16), .macOS(.v14)],

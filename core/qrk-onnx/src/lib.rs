@@ -16,7 +16,7 @@ include!(concat!(env!("OUT_DIR"), "/embedded_runtime.rs"));
 pub const MODEL_NAME: &str = "fastconformer_full_mixed.onnx";
 pub const MODEL_SHA256: &str = "822534428f1ed54eb802a9c43d4ecbabdfd8ba346b4d88d710414b0bbe7b4d69";
 pub const MODEL_BYTES: u64 = 88_307_457;
-pub const REPOSITORY_OWNER: &str = "yvezfscarves-afk";
+pub const REPOSITORY_OWNER: &str = "yvezf";
 pub const MODEL_MANIFEST: &str = include_str!("../../../model/model-manifest.json");
 fn failure(e: impl std::fmt::Display) -> Error {
     Error::Model(e.to_string())

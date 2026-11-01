@@ -1,6 +1,6 @@
 # .NET binding
 
-The four-platform package is available at https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/download/v0.1.0/QuranRecitationKit.0.1.0.nupkg. It has not been published to the NuGet registry. Use it as a local package feed, with NuGet.org retained for Microsoft dependencies; see the root README.
+The four-platform package is available at https://github.com/yvezf/QuranRecitationKit/releases/download/v0.1.0/QuranRecitationKit.0.1.0.nupkg. It has not been published to the NuGet registry. Use it as a local package feed, with NuGet.org retained for Microsoft dependencies; see the root README.
 
 `netstandard2.0` P/Invoke facade, compatible with modern .NET, WPF, WinForms, Unity hosts that support the native ABI, and other .NET applications. One recognizer is serialized; run Feed on a worker for GUI applications. Event handlers run synchronously on that worker and receive owned JSON values matching the shared schema. Do not re-enter session methods inside a handler.
 

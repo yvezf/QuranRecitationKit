@@ -1,13 +1,13 @@
 # QuranRecitationKit
 
-[![Cross-platform CI](https://github.com/yvezfscarves-afk/QuranRecitationKit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/yvezfscarves-afk/QuranRecitationKit/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/yvezfscarves-afk/QuranRecitationKit)](https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/tag/v0.1.0)
+[![Cross-platform CI](https://github.com/yvezf/QuranRecitationKit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/yvezf/QuranRecitationKit/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/yvezf/QuranRecitationKit)](https://github.com/yvezf/QuranRecitationKit/releases/tag/v0.1.0)
 
 Offline Quran recitation tracking for your app. Supply the passage you expect and mono audio; receive provisional word progress, ayah matches, transcripts and neutral retry events.
 
-**One Rust engine. C ABI. Swift, Node, Python and .NET bindings. Local WebSocket/stdio helper.** Native CI passed on macOS arm64/x64, Windows x64 and Linux x64, including the public model download and actual ONNX inference. The iOS SwiftUI example also builds. [Releases](https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/tag/v0.1.0) · [Model](https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/tag/model-v1) · [Publication verification](docs/PUBLICATION-2026-11-01.md).
+**One Rust engine. C ABI. Swift, Node, Python and .NET bindings. Local WebSocket/stdio helper.** Native CI passed on macOS arm64/x64, Windows x64 and Linux x64, including the public model download and actual ONNX inference. The iOS SwiftUI example also builds. [Releases](https://github.com/yvezf/QuranRecitationKit/releases/tag/v0.1.0) · [Model](https://github.com/yvezf/QuranRecitationKit/releases/tag/model-v1) · [Publication verification](docs/PUBLICATION-2026-11-01.md).
 
-SwiftPM consumers should use **0.1.1 or later**. This source-only patch fixes tagged manifest resolution and reuses the checksum-verified v0.1.0 native archive; other platform artifacts remain v0.1.0. [SwiftPM patch release](https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/tag/v0.1.1).
+SwiftPM consumers should use **0.1.1 or later**. This source-only patch fixes tagged manifest resolution and reuses the checksum-verified v0.1.0 native archive; other platform artifacts remain v0.1.0. [SwiftPM patch release](https://github.com/yvezf/QuranRecitationKit/releases/tag/v0.1.1).
 
 ## Pick your door
 
@@ -26,10 +26,10 @@ SwiftPM consumers should use **0.1.1 or later**. This source-only patch fixes ta
 
 | Platform | CLI + C library/header | Node prebuild |
 |---|---|---|
-| macOS Apple silicon, 14+ | [qrk-darwin-arm64.zip](https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/download/v0.1.0/qrk-darwin-arm64.zip) | [node-darwin-arm64.zip](https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/download/v0.1.0/node-darwin-arm64.zip) |
-| macOS Intel, 14+ | [qrk-darwin-x64.zip](https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/download/v0.1.0/qrk-darwin-x64.zip) | [node-darwin-x64.zip](https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/download/v0.1.0/node-darwin-x64.zip) |
-| Windows x64 | [qrk-win32-x64.zip](https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/download/v0.1.0/qrk-win32-x64.zip) | [node-win32-x64.zip](https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/download/v0.1.0/node-win32-x64.zip) |
-| Linux x64, glibc 2.34+ | [qrk-linux-x64.zip](https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/download/v0.1.0/qrk-linux-x64.zip) | [node-linux-x64.zip](https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/download/v0.1.0/node-linux-x64.zip) |
+| macOS Apple silicon, 14+ | [qrk-darwin-arm64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.1.0/qrk-darwin-arm64.zip) | [node-darwin-arm64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.1.0/node-darwin-arm64.zip) |
+| macOS Intel, 14+ | [qrk-darwin-x64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.1.0/qrk-darwin-x64.zip) | [node-darwin-x64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.1.0/node-darwin-x64.zip) |
+| Windows x64 | [qrk-win32-x64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.1.0/qrk-win32-x64.zip) | [node-win32-x64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.1.0/node-win32-x64.zip) |
+| Linux x64, glibc 2.34+ | [qrk-linux-x64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.1.0/qrk-linux-x64.zip) | [node-linux-x64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.1.0/node-linux-x64.zip) |
 
 The Linux CLI needs ALSA runtime libraries. Windows may need Microsoft's current VC++ Redistributable. Desktop helpers embed the platform CPU ONNX Runtime and extract hash-verified runtime bytes into a user-local cache. No Node or Python interpreter is required for the helper. Host applications own signing/notarization and microphone permissions.
 
@@ -77,7 +77,7 @@ The binding serializes native worker calls and applies backpressure. [Node detai
 Swift 5.9+, iOS 16+, macOS 14+. Add the public repository to your package dependencies:
 
 ```swift
-.package(url: "https://github.com/yvezfscarves-afk/QuranRecitationKit.git", from: "0.1.1")
+.package(url: "https://github.com/yvezf/QuranRecitationKit.git", from: "0.1.1")
 ```
 
 Choose `QuranRecitationKit` and optionally `QuranRecitationAudio`. SwiftPM downloads the exact checksum-pinned Apple archive. No local Rust toolchain is required for this path.
@@ -93,7 +93,7 @@ let summary = try await r.stop()
 reader.cancel()
 ```
 
-Python: download the wheel for your platform from [v0.1.0](https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/tag/v0.1.0), then `python -m pip install /path/to/downloaded.whl`. These are Python 3.9+ abi3 wheels, not a PyPI upload.
+Python: download the wheel for your platform from [v0.1.0](https://github.com/yvezf/QuranRecitationKit/releases/tag/v0.1.0), then `python -m pip install /path/to/downloaded.whl`. These are Python 3.9+ abi3 wheels, not a PyPI upload.
 
 ```python
 from quranrecitationkit import Recognizer, model_fetch
@@ -103,7 +103,7 @@ events = r.feed(pcm16k)  # iterable of mono 16 kHz floats
 summary = r.stop()
 ```
 
-.NET: download [QuranRecitationKit.0.1.0.nupkg](https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/download/v0.1.0/QuranRecitationKit.0.1.0.nupkg). Add the package reference without restoring, then restore using both the local folder and NuGet.org for Microsoft's dependencies:
+.NET: download [QuranRecitationKit.0.1.0.nupkg](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.1.0/QuranRecitationKit.0.1.0.nupkg). Add the package reference without restoring, then restore using both the local folder and NuGet.org for Microsoft's dependencies:
 
 ```sh
 dotnet add package QuranRecitationKit --version 0.1.0 --no-restore
@@ -152,7 +152,7 @@ Confidence is an uncalibrated CTC margin, not a probability of correct recitatio
 
 ## Model and text
 
-[Model v1](https://github.com/yvezfscarves-afk/QuranRecitationKit/releases/tag/model-v1): 88,307,457 bytes, SHA-256 `822534428f1ed54eb802a9c43d4ecbabdfd8ba346b4d88d710414b0bbe7b4d69`. `qrk model fetch`, Python/.NET model-fetch helpers and Swift `ModelPack.download()` use the configured public release and verify its exact size/hash. No acoustic weights or recitation audio are in Git or SDK archives.
+[Model v1](https://github.com/yvezf/QuranRecitationKit/releases/tag/model-v1): 88,307,457 bytes, SHA-256 `822534428f1ed54eb802a9c43d4ecbabdfd8ba346b4d88d710414b0bbe7b4d69`. `qrk model fetch`, Python/.NET model-fetch helpers and Swift `ModelPack.download()` use the configured public release and verify its exact size/hash. No acoustic weights or recitation audio are in Git or SDK archives.
 
 Only verbatim [Tanzil](https://tanzil.net) Arabic plus attribution is distributed. Normalized/tokenized indices are built in memory and may be cached on the user's machine. NVIDIA's Unigram tokenizer conversion was compared against SentencePiece on all 77,441 source words. Source commit and model release are distinguished in the [notices](THIRD_PARTY_NOTICES.md).
 
