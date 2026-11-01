@@ -12,6 +12,8 @@ for name in (binary,library):
 shutil.copyfile(root/'core/qrk-ffi/include/qrk.h',out/'qrk.h')
 for name in ('LICENSE','THIRD_PARTY_NOTICES.md','MODEL_CARD.md'):shutil.copyfile(root/name,out/name)
 shutil.copytree(root/'third-party',out/'third-party',dirs_exist_ok=True)
+provenance=root/'.planning/native-runtime/ONNXRUNTIME-PROVENANCE.json'
+if provenance.exists():shutil.copy2(provenance,out/provenance.name)
 receipt={p.name:hashlib.sha256(p.read_bytes()).hexdigest()for p in out.iterdir()if p.is_file()}
 (out/'SHA256SUMS.json').write_text(json.dumps(receipt,indent=2)+'\n')
 archive=root/'dist'/f'qrk-{a.rid}.zip'

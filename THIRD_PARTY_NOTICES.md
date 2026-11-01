@@ -38,7 +38,7 @@ SOFTWARE.
 
 ## 2. NVIDIA acoustic weights, vocabulary and tokenizer
 
-Base checkpoint: [NVIDIA stt_ar_fastconformer_hybrid_large_pcd_v1.0](https://huggingface.co/nvidia/stt_ar_fastconformer_hybrid_large_pcd_v1.0), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). NVIDIA also supplies the BPE vocabulary and SentencePiece tokenizer. The tokenizer is data, not project-authored code.
+Base checkpoint: [NVIDIA stt_ar_fastconformer_hybrid_large_pcd_v1.0](https://huggingface.co/nvidia/stt_ar_fastconformer_hybrid_large_pcd_v1.0), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). NVIDIA also supplies the Unigram vocabulary and SentencePiece tokenizer. The tokenizer is data, not project-authored code.
 
 The pinned ONNX file is not committed here. It is the mixed int4/int8 export from [Cyberistic/offline-quran-validation](https://github.com/Cyberistic/offline-quran-validation), distributed with Tilawa's v0.2.0 model release. Its preprocessing is embedded in the graph. This project exposes one existing encoder tensor by adding an output declaration; removing that declaration reproduces the single-output source graph SHA-256 exactly. No executable nodes or weights were changed by that step.
 
@@ -69,3 +69,5 @@ The generator requires [SentencePiece 0.2.1](https://github.com/google/sentencep
 ## Exclusions and claims
 
 No recitation recording, PCM, spectrogram, embedding, private rights manifest or Quran translation is included. The model is a general Arabic speech checkpoint; no new acoustic fine-tuning is claimed. The numerical completion thresholds are retained heuristics, not a calibrated Tajweed or zero-false-accept claim. There is no trained endpoint classifier in this repository.
+
+For Intel macOS desktop distributions, ONNX Runtime 1.24.2 is linked into a C-API shared library from Microsoft’s checksum-pinned Apple static archive because its PyPI wheel is unavailable for that architecture. Runtime/model sources and weights are unchanged. Build provenance is included in native release archives.

@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {os: macos-14, rid: osx-arm64}
+          - {os: macos-15, rid: osx-arm64}
           - {os: macos-15-intel, rid: osx-x64}
           - {os: windows-2022, rid: win-x64}
           - {os: ubuntu-22.04, rid: linux-x64}
@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-        with: {components: rustfmt, clippy}
+        with: {components: "rustfmt, clippy"}
       - uses: Swatinem/rust-cache@v2
         with: {workspaces: core}
       - if: runner.os == 'Linux'
@@ -33,19 +33,14 @@ jobs:
         with: {python-version: '3.11'}
       - uses: actions/setup-dotnet@v4
         with: {dotnet-version: '8.0.x'}
-      - run: pip install onnxruntime==1.24.2 'maturin>=1.7,<2'
-      - name: Locate and embed CPU runtime
-        shell: bash
-        run: |
-          python - <<'PY'
-          import onnxruntime,pathlib,os
-          files=[p for p in (pathlib.Path(onnxruntime.__file__).parent/'capi').iterdir() if p.name.startswith('libonnxruntime.') and ('.so' in p.name or p.suffix=='.dylib') or p.name=='onnxruntime.dll']
-          path=str(sorted(files)[0])
-          with open(os.environ['GITHUB_ENV'],'a')as f:f.write('ORT_DYLIB_PATH='+path+'\nQRK_EMBED_RUNTIME='+path+'\n')
-          PY
+      - run: pip install 'maturin>=1.7,<2'
+      - if: runner.os != 'macOS' || runner.arch != 'X64'
+        run: pip install onnxruntime==1.24.2
+      - run: python tools/prepare_runtime.py
       - run: cargo fmt --manifest-path core/Cargo.toml --all --check
       - run: cargo clippy --manifest-path core/Cargo.toml --workspace --all-targets -- -D warnings
       - run: cargo build --manifest-path core/Cargo.toml --workspace --release --locked
+      - run: python tools/ci_model.py
       - run: cargo test --manifest-path core/Cargo.toml --workspace --locked
       - run: cargo run --manifest-path core/Cargo.toml -p qrk-cli --release -- selftest
       - run: npm --prefix bindings/node ci --ignore-scripts
@@ -62,9 +57,9 @@ jobs:
         run: |
           mkdir -p examples/dotnet-console/bin/Release/net8.0
           cp core/target/release/qrk.dll examples/dotnet-console/bin/Release/net8.0/ 2>/dev/null || cp core/target/release/libqrk.* examples/dotnet-console/bin/Release/net8.0/
-          dotnet run --project examples/dotnet-console/RecitationDemo.csproj -c Release --no-build
+          dotnet run --project examples/dotnet-console/RecitationDemo.csproj -c Release --no-build -- "$QRK_MODEL_DIR"
   swift:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
