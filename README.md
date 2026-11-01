@@ -177,7 +177,7 @@ Confidence is an uncalibrated CTC margin, not a probability of correct recitatio
 
 Distributed Arabic text is verbatim [Tanzil](https://tanzil.net), with attribution. Normalized/tokenized indices are built in memory and may be cached on the user's machine. NVIDIA's Unigram tokenizer conversion was compared against SentencePiece on all 77,441 source words. Source commit and model release are distinguished in the [notices](THIRD_PARTY_NOTICES.md).
 
-V1 export/preprocessing provenance remains qualified; attribution does not resolve missing permission. The clean NVIDIA/NeMo v2 candidate pipeline is prepared but unvalidated and unpromoted. See [MODEL_CARD.md](MODEL_CARD.md) and [model/export](model/export/README.md).
+V1 export/preprocessing provenance remains qualified; attribution does not resolve missing permission. The clean NVIDIA/NeMo v2 candidate exports and quantizes, but fails the synthetic decision-parity gate and is not promoted. See [MODEL_CARD.md](MODEL_CARD.md) and the [export status](model/export/STATUS-2026-11-01.md).
 
 ## Build and verify
 
