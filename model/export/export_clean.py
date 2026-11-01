@@ -20,7 +20,9 @@ class RawAudioCTC(torch.nn.Module):
         # Stable log-mel accumulation keeps near-empty spectral bins from
         # amplifying FP32 FFT rounding. The licensed NeMo implementation is
         # unchanged; the neural encoder/decoder still run in FP32.
-        features,feature_length=self.model.preprocessor(input_signal=audio_signal.to(torch.float64),length=length)
+        # AudioPreprocessor.forward unconditionally casts to float32; use its
+        # own get_features so the declared accumulation precision is honored.
+        features,feature_length=self.model.preprocessor.get_features(audio_signal.to(torch.float64),length)
         encoded,encoded_length=self.model.encoder(audio_signal=features.to(torch.float32),length=feature_length)
         return self.model.ctc_decoder(encoder_output=encoded),encoded.transpose(1,2),features
 def main():
