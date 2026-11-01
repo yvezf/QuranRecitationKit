@@ -1,0 +1,47 @@
+{
+  "artifactVersion": 2,
+  "upstream": {
+    "project": "Tilawa",
+    "repository": "https://github.com/yazinsai/tilawa",
+    "commit": "ec5cdc72c1c48ba29866ca2e3197d6b9a0e2e793",
+    "modelRelease": "v0.2.0"
+  },
+  "baseModel": {
+    "name": "NVIDIA stt_ar_fastconformer_hybrid_large_pcd_v1.0",
+    "license": "CC-BY-4.0",
+    "url": "https://catalog.ngc.nvidia.com/orgs/nvidia/teams/nemo/models/stt_ar_fastconformer_hybrid_large_pcd_v1.0"
+  },
+  "model": {
+    "file": "fastconformer_full_mixed.onnx",
+    "size": 88307457,
+    "sha256": "822534428f1ed54eb802a9c43d4ecbabdfd8ba346b4d88d710414b0bbe7b4d69",
+    "input": {
+      "audio_signal": "Float32[1,N] at 16000 Hz mono",
+      "length": "Int64[1]"
+    },
+    "output": {
+      "log_probs": "Float32[1,T,1025]",
+      "encoder_hidden": {
+        "name": "/encoder/layers.16/norm_out/LayerNormalization_output_0",
+        "shape": "Float32[1,T,512]",
+        "timeAxis": "identical to log_probs"
+      },
+      "blankTokenID": 1024
+    },
+    "changes": "NVIDIA checkpoint exported and quantized by Cyberistic; final encoder tensor exposed as an additional output with no executable node changes.",
+    "sourceGraph": {
+      "size": 88307366,
+      "sha256": "4767182cd92975869f81a7e32700b14ca2b04e8dc97a15ff220a8697f4639488"
+    },
+    "transformation": {
+      "note": "Original transformation tools are absent from the source checkout. Static reversal of the added output reproduces sourceGraph SHA256 exactly."
+    }
+  },
+  "vocabulary": {
+    "file": "vocab.json",
+    "size": 21062,
+    "sha256": "c55877f3bff8bc3aaefc160e8c2fb88cb349088d092513d40210ccfe535e671b",
+    "tokenCount": 1025
+  },
+  "quranMapping": "Generated ayah index from verbatim Tanzil Uthmani Arabic; no upstream Quran token table."
+}

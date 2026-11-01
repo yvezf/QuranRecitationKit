@@ -1,0 +1,26 @@
+name: Swift CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Swift version
+        run: swift --version
+      - name: Build
+        run: swift build -v
+      - name: Test without audio or a model download
+        run: swift test -v
+      - name: Verify deterministic token map
+        run: |
+          python3 -m venv Tools/.venv
+          Tools/.venv/bin/pip install -r Tools/requirements.txt
+          TOKEN_MAP_PYTHON=Tools/.venv/bin/python Tools/verify_token_map.sh
+      - name: Build iOS example
+        run: |
+          xcodebuild -project Example/RecitationDemo/RecitationDemo.xcodeproj \
+            -scheme RecitationDemo -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath /private/tmp/HearBuild-shared CODE_SIGNING_ALLOWED=NO build

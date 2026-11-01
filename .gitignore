@@ -1,0 +1,26 @@
+.build/
+.swiftpm/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+.DS_Store
+# model binaries live in GitHub Releases, never in git
+*.onnx
+Tools/.venv/
+__pycache__/
+*.wav
+*.m4a
+*.mp3
+*.pcm
+
+# Local planning drafts are preserved for review, not claimed as implemented.
+.planning/
+
+**/.build/
+**/.swiftpm/
+**/.venv/
+**/target/
+**/node_modules/
+**/*.node
+**/quran-token-map.json
+**/quran-token-map.manifest.json

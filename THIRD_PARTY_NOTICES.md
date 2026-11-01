@@ -1,0 +1,71 @@
+# Third-party notices
+
+QuranRecitationKit's own source code is MIT-licensed (see `LICENSE`). It builds on the work below. Each item lists what we use, where it came from, its license, and what we changed. Keep this file with any redistribution.
+
+## 1. Tilawa — architecture and tracking algorithms (MIT)
+
+Portions of the engine are ported from or modeled on **Tilawa** by yazinsai — https://github.com/yazinsai/tilawa — specifically the Arabic normalizer (`normalizer.ts`), the greedy text-CTC decoder (`text-ctc-decode.ts`), the expected-word aligner (`tracker.ts`), the CTC rescoring approach (`ctc-rescore.ts`), and the overall recognition architecture.
+
+Two Tilawa references are involved and are different things:
+- **Source**: commit `ec5cdc72c1c48ba29866ca2e3197d6b9a0e2e793` (July 9, 2026), which carries Tilawa's MIT `LICENSE` and `packages/core/`.
+- **Model assets**: GitHub release `v0.2.0` (June 30, 2026): `fastconformer_full_mixed.onnx`, `vocab.json`, `tokenizer.model` (see §2).
+
+Tilawa later (v0.3.0+) adopted a Zipformer model and phoneme corpus licensed NPL-1.2 (non-commercial, share-alike). **QuranRecitationKit contains none of that material.** It uses only the FastConformer text-CTC path, which Tilawa distributes under MIT with the NVIDIA model under CC BY 4.0.
+
+```
+MIT License
+
+Copyright (c) 2026 yazinsai
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## 2. NVIDIA acoustic weights, vocabulary and tokenizer
+
+Base checkpoint: [NVIDIA stt_ar_fastconformer_hybrid_large_pcd_v1.0](https://huggingface.co/nvidia/stt_ar_fastconformer_hybrid_large_pcd_v1.0), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). NVIDIA also supplies the BPE vocabulary and SentencePiece tokenizer. The tokenizer is data, not project-authored code.
+
+The pinned ONNX file is not committed here. It is the mixed int4/int8 export from [Cyberistic/offline-quran-validation](https://github.com/Cyberistic/offline-quran-validation), distributed with Tilawa's v0.2.0 model release. Its preprocessing is embedded in the graph. This project exposes one existing encoder tensor by adding an output declaration; removing that declaration reproduces the single-output source graph SHA-256 exactly. No executable nodes or weights were changed by that step.
+
+**Qualification before redistributing the model:** Cyberistic's repository has no license file. Its exporter contains custom preprocessing code, including STFT/featurizer logic. Whether that expression survives in the compiled graph is unresolved; it cannot be certified as merely a rights-neutral conversion of weights. NVIDIA's weight license is not a grant for someone else's code. Obtain appropriate permission or reproduce the export using clearly licensed/original preprocessing before relying on a public model release. Attribution alone does not resolve missing permission. The optional loader's pinned hash is an integrity guarantee, not a licensing guarantee.
+
+No parties above endorse this project. Model contract and hashes are in [MODEL_CARD.md](MODEL_CARD.md).
+
+## 3. Tanzil Arabic text
+
+Source: [Tanzil Project](https://tanzil.net). License: [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) together with [Tanzil's additional text conditions](https://tanzil.net/docs/text_license).
+
+`Tools/data/quran-uthmani.json` preserves every source Arabic string and contains no translation. The source attribution and full Tanzil notice are retained there and in `Tools/data/TANZIL-NOTICE.txt`.
+
+`Resources/quran-token-map.json` is a generated matching index. It includes normalized/tokenized matching data and verbatim display Arabic, and reproduces Tanzil's notice. The index is not presented as Quran display text. Numbered-verse projection separates optional unnumbered preambles without rewriting the source's Arabic strings.
+
+**Qualification before publishing the derived index:** Tanzil explicitly restricts changes to its text. Treating normalization as a machine index rather than display text is a technical distinction, not a permission grant. Confirm permission for this distribution or adopt a runtime/local generation design that respects the applicable terms. Shipping a generator does not automatically authorize redistributing its output. Do not claim that the generic CC BY label settles this additional condition.
+
+When displaying the Arabic text, preserve it verbatim, indicate Tanzil as source, link to Tanzil, and carry the full notice. This package includes the notice in both source and generated text-containing artifacts.
+
+## 4. ONNX Runtime
+
+[Microsoft ONNX Runtime](https://github.com/microsoft/onnxruntime) and its [Swift package](https://github.com/microsoft/onnxruntime-swift-package-manager) are MIT-licensed. `Package.swift` requests >=1.24.0 and <2.0.0; `Package.resolved` pins 1.24.2, revision `b7fb7f7dea8a2469e6335d95a61b8f36d0dc83b2`. Dependency distributions retain Microsoft's notices.
+
+## 5. Build-time tooling and platform frameworks
+
+The generator requires [SentencePiece 0.2.1](https://github.com/google/sentencepiece/tree/v0.2.1), Apache-2.0. It is installed separately, not vendored as executable code. Apple's Foundation, AVFoundation, CryptoKit and SDK tools are governed by their respective SDK terms.
+
+## Exclusions and claims
+
+No recitation recording, PCM, spectrogram, embedding, private rights manifest or Quran translation is included. The model is a general Arabic speech checkpoint; no new acoustic fine-tuning is claimed. The numerical completion thresholds are retained heuristics, not a calibrated Tajweed or zero-false-accept claim. There is no trained endpoint classifier in this repository.

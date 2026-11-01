@@ -1,0 +1,27 @@
+// !$*UTF8*$!
+{
+ archiveVersion = 1; classes = {}; objectVersion = 56;
+ objects = {
+ A00000000000000000000001 = {isa = PBXProject; attributes = {LastUpgradeCheck = 1600;}; buildConfigurationList = A00000000000000000000002; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; knownRegions = (en, Base); mainGroup = A00000000000000000000003; packageReferences = (A00000000000000000000010); productRefGroup = A00000000000000000000004; projectDirPath = ""; projectRoot = ""; targets = (A00000000000000000000005);};
+ A00000000000000000000002 = {isa = XCConfigurationList; buildConfigurations = (A00000000000000000000020, A00000000000000000000021); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release;};
+ A00000000000000000000003 = {isa = PBXGroup; children = (A00000000000000000000006, A00000000000000000000004); sourceTree = "<group>";};
+ A00000000000000000000004 = {isa = PBXGroup; children = (A00000000000000000000007); name = Products; sourceTree = "<group>";};
+ A00000000000000000000005 = {isa = PBXNativeTarget; buildConfigurationList = A00000000000000000000022; buildPhases = (A00000000000000000000008, A00000000000000000000009, A0000000000000000000000A); buildRules = (); dependencies = (); name = RecitationDemo; packageProductDependencies = (A00000000000000000000011, A00000000000000000000012); productName = RecitationDemo; productReference = A00000000000000000000007; productType = "com.apple.product-type.application";};
+ A00000000000000000000006 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecitationDemoApp.swift; sourceTree = "<group>";};
+ A00000000000000000000007 = {isa = PBXFileReference; explicitFileType = wrapper.application; path = RecitationDemo.app; sourceTree = BUILT_PRODUCTS_DIR;};
+ A00000000000000000000008 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A0000000000000000000000B); runOnlyForDeploymentPostprocessing = 0;};
+ A00000000000000000000009 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A0000000000000000000000C, A0000000000000000000000D); runOnlyForDeploymentPostprocessing = 0;};
+ A0000000000000000000000A = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;};
+ A0000000000000000000000B = {isa = PBXBuildFile; fileRef = A00000000000000000000006;};
+ A0000000000000000000000C = {isa = PBXBuildFile; productRef = A00000000000000000000011;};
+ A0000000000000000000000D = {isa = PBXBuildFile; productRef = A00000000000000000000012;};
+ A00000000000000000000010 = {isa = XCLocalSwiftPackageReference; relativePath = ../..;};
+ A00000000000000000000011 = {isa = XCSwiftPackageProductDependency; package = A00000000000000000000010; productName = QuranRecitationKit;};
+ A00000000000000000000012 = {isa = XCSwiftPackageProductDependency; package = A00000000000000000000010; productName = QuranRecitationAudio;};
+ A00000000000000000000020 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 16.0; SWIFT_VERSION = 5.9;}; name = Debug;};
+ A00000000000000000000021 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 16.0; SWIFT_VERSION = 5.9;}; name = Release;};
+ A00000000000000000000022 = {isa = XCConfigurationList; buildConfigurations = (A00000000000000000000023, A00000000000000000000024); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release;};
+ A00000000000000000000023 = {isa = XCBuildConfiguration; buildSettings = {PRODUCT_BUNDLE_IDENTIFIER = org.quranrecitationkit.demo; PRODUCT_NAME = "$(TARGET_NAME)"; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_NSMicrophoneUsageDescription = "Follow your recitation on this device. Audio is not uploaded."; INFOPLIST_KEY_UILaunchScreen_Generation = YES; TARGETED_DEVICE_FAMILY = "1,2"; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;}; name = Debug;};
+ A00000000000000000000024 = {isa = XCBuildConfiguration; buildSettings = {PRODUCT_BUNDLE_IDENTIFIER = org.quranrecitationkit.demo; PRODUCT_NAME = "$(TARGET_NAME)"; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_NSMicrophoneUsageDescription = "Follow your recitation on this device. Audio is not uploaded."; INFOPLIST_KEY_UILaunchScreen_Generation = YES; TARGETED_DEVICE_FAMILY = "1,2"; SWIFT_COMPILATION_MODE = wholemodule;}; name = Release;};
+ }; rootObject = A00000000000000000000001;
+}
