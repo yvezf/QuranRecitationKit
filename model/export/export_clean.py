@@ -43,8 +43,8 @@ def main():
     wrapper=RawAudioCTC(model).eval();wave=torch.zeros((1,32000),dtype=torch.float32);length=torch.tensor([32000],dtype=torch.int64)
     source=args.out/'full-precision.onnx'
     # Dynamo handles supported complex/STFT decompositions. Unsupported export fails here.
-    # Torch 2.7's Dynamo exporter emits opset 18 natively. Requesting 20 invokes
-    # an unsupported version-conversion pass over its local ONNX functions.
+    # Use Torch 2.7's native opset. Keep ONNXScript/IR versions pinned together;
+    # finalization must inline local functions before version conversion.
     torch.onnx.export(wrapper,(wave,length),str(source),input_names=['audio_signal','length'],output_names=['log_probs',HIDDEN],dynamic_axes={'audio_signal':{1:'N'},'log_probs':{1:'T'},HIDDEN:{1:'T'}},opset_version=18,dynamo=True,external_data=False)
     onnx.checker.check_model(onnx.load(str(source)))
     quantized=args.out/'candidate-int8.onnx'

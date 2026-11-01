@@ -6,6 +6,7 @@ xcuserdata/
 .DS_Store
 # model binaries live in GitHub Releases, never in git
 *.onnx
+*.nemo
 Tools/.venv/
 __pycache__/
 *.wav
