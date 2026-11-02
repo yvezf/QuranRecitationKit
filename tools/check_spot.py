@@ -7,14 +7,14 @@ root=Path(__file__).resolve().parent.parent
 binary=root/'core/target/release'/('qrk.exe' if os.name=='nt' else 'qrk')
 validator=Draft202012Validator(json.loads((root/'protocol/events.schema.json').read_text()))
 for text in ['الذين آمنوا','The teacher explains the timetable']:
- r=subprocess.run([str(binary),'match-text',text,'--json'],capture_output=True,text=True,check=True)
+ r=subprocess.run([str(binary),'match-text',text,'--json'],capture_output=True,text=True,encoding="utf-8",check=True)
  result=json.loads(r.stdout);assert result['verified'] is False
  if text.startswith('الذين'):assert result['ambiguous'] and len(result['candidates'])>=2
  else:assert result['candidates']==[]
 model=os.environ.get('QRK_MODEL_DIR')
 if not model:raise SystemExit('QRK_MODEL_DIR must be set by the explicit model-fetch gate')
 commands=[{'type':'match_text','text':'الذين آمنوا'},{'type':'start','mode':'spot','format':'f32le','sample_rate':16000},{'type':'audio','data':base64.b64encode(bytes(32000*4)).decode()},{'type':'stop'}]
-r=subprocess.run([str(binary),'--model',model,'serve','--stdio'],input=''.join(json.dumps(v)+'\n' for v in commands),capture_output=True,text=True,check=True,timeout=120)
+r=subprocess.run([str(binary),'--model',model,'serve','--stdio'],input=''.join(json.dumps(v)+'\n' for v in commands),capture_output=True,text=True,encoding="utf-8",check=True,timeout=120)
 events=[json.loads(line) for line in r.stdout.splitlines()]
 for event in events:validator.validate(event)
 assert not any(e['type'] in ['error','quote_detected'] for e in events),events
