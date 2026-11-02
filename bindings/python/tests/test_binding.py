@@ -1,7 +1,7 @@
 import os, unittest
 from quranrecitationkit import Recognizer, version
 class BindingTests(unittest.TestCase):
-    def test_version(self): self.assertEqual(version(), "0.1.0")
+    def test_version(self): self.assertEqual(version(), "0.2.0")
     def test_invalid_model(self):
         with self.assertRaises(RuntimeError): Recognizer("/model-does-not-exist")
     @unittest.skipUnless(os.environ.get("QRK_MODEL_DIR"), "set QRK_MODEL_DIR for local inference")

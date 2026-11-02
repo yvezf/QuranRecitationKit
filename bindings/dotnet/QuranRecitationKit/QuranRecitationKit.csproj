@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion><Nullable>enable</Nullable>
-    <PackageId>QuranRecitationKit</PackageId><Version>0.1.0</Version>
+    <PackageId>QuranRecitationKit</PackageId><Version>0.2.0</Version>
     <Authors>Yousef Alabadi</Authors><Description>Offline expected-text Quran recitation tracking with a shared Rust core.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <GenerateDocumentationFile>true</GenerateDocumentationFile><NoWarn>1591</NoWarn>

@@ -1,10 +1,18 @@
 {
-  "artifactVersion": 2,
+  "artifactVersion": 3,
   "upstream": {
-    "project": "Tilawa",
-    "repository": "https://github.com/yazinsai/tilawa",
-    "commit": "ec5cdc72c1c48ba29866ca2e3197d6b9a0e2e793",
-    "modelRelease": "v0.2.0"
+    "project": "NVIDIA NeMo",
+    "repository": "https://github.com/NVIDIA/NeMo",
+    "version": "2.4.0",
+    "sourceCheckpoint": {
+      "repository": "nvidia/stt_ar_fastconformer_hybrid_large_pcd_v1.0",
+      "revision": "7f32349d952f42a28dce979ba73270aa2bbdfa89",
+      "file": "stt_ar_fastconformer_hybrid_large_pcd_v1.0.nemo",
+      "size": 459233280,
+      "sha256": "d29d19d7c054a5fc010ac6815e9cbb0dd1b21a30e0a7f7f2982e1fecaf0c3e31",
+      "license": "CC-BY-4.0",
+      "url": "https://huggingface.co/nvidia/stt_ar_fastconformer_hybrid_large_pcd_v1.0/resolve/7f32349d952f42a28dce979ba73270aa2bbdfa89/stt_ar_fastconformer_hybrid_large_pcd_v1.0.nemo"
+    }
   },
   "baseModel": {
     "name": "NVIDIA stt_ar_fastconformer_hybrid_large_pcd_v1.0",
@@ -13,8 +21,8 @@
   },
   "model": {
     "file": "fastconformer_full_mixed.onnx",
-    "size": 88307457,
-    "sha256": "822534428f1ed54eb802a9c43d4ecbabdfd8ba346b4d88d710414b0bbe7b4d69",
+    "size": 88880384,
+    "sha256": "8771deacfa0d7cacc0116d5c4a27222dcfcf52a96e555a7e9d26ab265c7c8f09",
     "input": {
       "audio_signal": "Float32[1,N] at 16000 Hz mono",
       "length": "Int64[1]"
@@ -28,13 +36,13 @@
       },
       "blankTokenID": 1024
     },
-    "changes": "NVIDIA checkpoint exported and quantized by Cyberistic; final encoder tensor exposed as an additional output with no executable node changes.",
-    "sourceGraph": {
-      "size": 88307366,
-      "sha256": "4767182cd92975869f81a7e32700b14ca2b04e8dc97a15ff220a8697f4639488"
-    },
-    "transformation": {
-      "note": "Original transformation tools are absent from the source checkout. Static reversal of the added output reproduces sourceGraph SHA256 exactly."
+    "changes": "Direct NVIDIA checkpoint export with NVIDIA NeMo 2.4.0 featurizer; float64 log-mel accumulation and float32 neural encoder/decoder; ONNX Runtime dynamic int8 convolution and symmetric int4 constant MatMul (block 128); two outputs. No training or activation-calibration dataset.",
+    "export": {
+      "pipeline": "model/export/export_clean.py",
+      "commit": "55df545f938d0454eeaae2f29b625056d746311d",
+      "workflow": "https://github.com/yvezf/QuranRecitationKit/actions/runs/41363708288",
+      "sourceFidelityMaximumAbsoluteError": 0.005,
+      "calibration": "none"
     }
   },
   "vocabulary": {
@@ -43,5 +51,7 @@
     "sha256": "c55877f3bff8bc3aaefc160e8c2fb88cb349088d092513d40210ccfe535e671b",
     "tokenCount": 1025
   },
-  "quranMapping": "Generated ayah index from verbatim Tanzil Uthmani Arabic; no upstream Quran token table."
+  "quranMapping": "Generated ayah index from verbatim Tanzil Uthmani Arabic; no upstream Quran token table.",
+  "release": "model-v2",
+  "previousRelease": "model-v1"
 }

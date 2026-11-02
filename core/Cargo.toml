@@ -2,7 +2,7 @@
 resolver = "2"
 members = ["qrk-core", "qrk-onnx", "qrk-audio", "qrk-ffi", "qrk-cli"]
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 authors = ["Yousef Alabadi"]

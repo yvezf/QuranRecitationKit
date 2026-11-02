@@ -40,11 +40,19 @@ SOFTWARE.
 
 Base checkpoint: [NVIDIA stt_ar_fastconformer_hybrid_large_pcd_v1.0](https://huggingface.co/nvidia/stt_ar_fastconformer_hybrid_large_pcd_v1.0), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). NVIDIA also supplies the Unigram vocabulary and SentencePiece tokenizer. The tokenizer is data, not project-authored code.
 
-The pinned ONNX file is not committed here. It is the mixed int4/int8 export from [Cyberistic/offline-quran-validation](https://github.com/Cyberistic/offline-quran-validation), distributed with Tilawa's v0.2.0 model release. Its preprocessing is embedded in the graph. This project exposes one existing encoder tensor by adding an output declaration; removing that declaration reproduces the single-output source graph SHA-256 exactly. No executable nodes or weights were changed by that step.
+### Default model-v2: direct NVIDIA export
 
-**Qualification before redistributing the model:** Cyberistic's repository has no license file. Its exporter contains custom preprocessing code, including STFT/featurizer logic. Whether that expression survives in the compiled graph is unresolved; it cannot be certified as merely a rights-neutral conversion of weights. NVIDIA's weight license is not a grant for someone else's code. Obtain appropriate permission or reproduce the export using clearly licensed/original preprocessing before relying on a public model release. Attribution alone does not resolve missing permission. The optional loader's pinned hash is an integrity guarantee, not a licensing guarantee.
+The ONNX weights are a separate [model-v2 release asset](https://github.com/yvezf/QuranRecitationKit/releases/tag/model-v2), not committed here. The hash-pinned NVIDIA checkpoint in `model/export/source.json` is restored through [NeMo 2.4.0 (Apache-2.0)](https://github.com/NVIDIA/NeMo/blob/v2.4.0/LICENSE). Its existing featurizer runs with float64 accumulation, followed by the original float32 encoder/CTC decoder. PyTorch exports ONNX, then Microsoft's ONNX Runtime applies dynamic int8 convolution and symmetric int4 constant MatMul weights (block 128). Both CTC and encoder outputs are exposed. There is no new training or activation-calibration dataset. V2 does not use Cyberistic exporter/preprocessing source, its ONNX graph, or Tilawa model assets.
 
-No parties above endorse this project. Model contract and hashes are in [MODEL_CARD.md](MODEL_CARD.md).
+Build-time export tools retain their notices: NeMo and ONNX (Apache-2.0), PyTorch (BSD-style upstream notice), ONNXScript and ONNX Runtime (MIT). Complete upstream license texts are in `third-party/NEMO-LICENSE`, `PYTORCH-LICENSE`, `ONNX-LICENSE`, `ONNXSCRIPT-LICENSE` and `ONNXRUNTIME-LICENSE`; the separate model release includes `MODEL-NOTICES.txt`. NVIDIA's CC BY 4.0 model attribution and declared modifications apply to the converted weights.
+
+### Previous model-v1: qualified historical export
+
+[Model-v1](https://github.com/yvezf/QuranRecitationKit/releases/tag/model-v1) remains published for older SDKs. It is the mixed int4/int8 export from [Cyberistic/offline-quran-validation](https://github.com/Cyberistic/offline-quran-validation), distributed with Tilawa's v0.2.0 model release. Preprocessing is embedded in that graph. Exposing one existing encoder tensor by adding an output declaration changes no executable nodes or weights; removing the declaration reproduces the source graph hash.
+
+Cyberistic's repository has no license file. Its exporter contains custom STFT/featurizer code; whether that expression survives in the compiled graph remains unresolved. NVIDIA's weight license does not grant rights to someone else's code, and attribution/integrity verification do not resolve that qualification. This historical warning is retained; the new v2 default was reproduced directly with licensed NVIDIA/NeMo tooling instead of importing that export.
+
+No parties above endorse this project. Contracts and hashes are in [MODEL_CARD.md](MODEL_CARD.md).
 
 ## 3. Tanzil Arabic text
 

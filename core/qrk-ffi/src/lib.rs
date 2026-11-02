@@ -66,7 +66,7 @@ pub extern "C" fn qrk_last_error() -> *const c_char {
 /// Static UTF-8 version string; do not free.
 #[no_mangle]
 pub extern "C" fn qrk_version() -> *const c_char {
-    c"0.1.0".as_ptr()
+    concat!(env!("CARGO_PKG_VERSION"), "\0").as_ptr().cast()
 }
 /// Owned UTF-8 JSON describing the pinned model and configured release URL. Free with qrk_string_free.
 #[no_mangle]

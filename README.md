@@ -1,13 +1,13 @@
 # QuranRecitationKit
 
 [![Cross-platform CI](https://github.com/yvezf/QuranRecitationKit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/yvezf/QuranRecitationKit/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/yvezf/QuranRecitationKit)](https://github.com/yvezf/QuranRecitationKit/releases/tag/v0.1.0)
+[![Release](https://img.shields.io/github/v/release/yvezf/QuranRecitationKit)](https://github.com/yvezf/QuranRecitationKit/releases/tag/v0.2.0)
 
 Offline Quran recitation tracking for your app. Supply the passage you expect and mono audio; receive provisional word progress, ayah matches, transcripts and neutral retry events.
 
-**One Rust engine. C ABI. Swift, Node, Python and .NET bindings. Local WebSocket/stdio helper.** Native CI passed on macOS arm64/x64, Windows x64 and Linux x64, including the public model download and actual ONNX inference. The iOS SwiftUI example also builds. [Releases](https://github.com/yvezf/QuranRecitationKit/releases/tag/v0.1.0) · [Model](https://github.com/yvezf/QuranRecitationKit/releases/tag/model-v1) · [Publication verification](docs/PUBLICATION-2026-11-01.md).
+**One Rust engine. C ABI. Swift, Node, Python and .NET bindings. Local WebSocket/stdio helper.** Native CI passed on macOS arm64/x64, Windows x64 and Linux x64, including the public model download and actual ONNX inference. The iOS SwiftUI example also builds. [Releases](https://github.com/yvezf/QuranRecitationKit/releases/tag/v0.2.0) · [Model](https://github.com/yvezf/QuranRecitationKit/releases/tag/model-v2) · [Publication verification](docs/PUBLICATION-2026-11-01.md).
 
-SwiftPM consumers should use **0.1.1 or later**. This manifest patch fixes tagged resolution and reuses the checksum-verified v0.1.0 native archive; other platform artifacts remain v0.1.0. [SwiftPM patch release](https://github.com/yvezf/QuranRecitationKit/releases/tag/v0.1.1).
+**v0.2.0 uses the clean, directly exported NVIDIA model-v2.** All bindings use the native core's pinned model metadata and a versioned cache. [Validation and known limits](model/export/STATUS-2026-11-01.md).
 
 ## Pick your door
 
@@ -22,7 +22,7 @@ SwiftPM consumers should use **0.1.1 or later**. This manifest patch fixes tagge
 
 ## Why this one
 
-One native core, every platform, any language. Code is MIT; NVIDIA weights are CC BY 4.0; Tanzil text is CC BY 3.0 with its verbatim-text conditions. The current v1 export's preprocessing rights remain **unverified**; the clean v2 candidate must pass validation before replacing it. See [third-party notices](THIRD_PARTY_NOTICES.md#2-nvidia-acoustic-weights-vocabulary-and-tokenizer).
+One native core, every platform, any language. Code is MIT; NVIDIA weights are CC BY 4.0; Tanzil text is CC BY 3.0 with its verbatim-text conditions. The default model-v2 is exported directly from NVIDIA using licensed NeMo/ONNX tooling; the historical v1 qualification remains documented. See [third-party notices](THIRD_PARTY_NOTICES.md#2-nvidia-acoustic-weights-vocabulary-and-tokenizer).
 
 ### How it compares (as of 2026-11-01)
 
@@ -30,7 +30,7 @@ This compares published integration paths and stated terms, rather than recognit
 
 | Project | Integrates from | Platforms | Code license | Model/data license |
 |---|---|---|---|---|
-| [QuranRecitationKit (this)](https://github.com/yvezf/QuranRecitationKit) | Any language via C ABI or `qrk` sidecar; Swift, Node, Python, .NET | macOS 14+, Windows x64, Linux x64, iOS 16+; [verification](docs/PUBLICATION-2026-11-01.md) | [MIT](LICENSE) | NVIDIA CC BY 4.0 weights; Tanzil CC BY 3.0 text with verbatim conditions; [v1 export preprocessing rights unverified](THIRD_PARTY_NOTICES.md#2-nvidia-acoustic-weights-vocabulary-and-tokenizer) |
+| [QuranRecitationKit (this)](https://github.com/yvezf/QuranRecitationKit) | Any language via C ABI or `qrk` sidecar; Swift, Node, Python, .NET | macOS 14+, Windows x64, Linux x64, iOS 16+; [verification](docs/PUBLICATION-2026-11-01.md) | [MIT](LICENSE) | NVIDIA CC BY 4.0 weights; Tanzil CC BY 3.0 text with verbatim conditions; [direct NVIDIA/NeMo v2 export](MODEL_CARD.md) |
 | [Tilawa](https://github.com/yazinsai/tilawa) | TypeScript: web, Node, React Native | Browser, Node, React Native | MIT | [Default Zipformer model/phoneme corpus: NPL-1.2](https://github.com/yazinsai/tilawa/blob/2f2617460dc4a6b967e0cc49fa04804bbf22ec69/NOTICE.md) (no paid features; share-alike); FastConformer path: NVIDIA CC BY 4.0 |
 | [recite_quran](https://pub.dev/packages/recite_quran/versions/1.0.5) | Flutter/Dart package | Android, iOS, Linux, macOS, web, Windows, [per pub.dev](https://pub.dev/packages/recite_quran) | Custom [“Sacred Covenant”](https://pub.dev/packages/recite_quran/license); pub.dev labels it unknown | Referenced [Quran-Lab Zipformer-v3: NPL-1.2](https://huggingface.co/Quran-Lab/zipformer_p-arabic-v3); other bundled data terms unverified |
 | [QuranRecognitionKit](https://github.com/akhandafm17/QuranRecognitionKit) | Swift package | iOS 17+, macOS 14+, [declared in manifest](https://github.com/akhandafm17/QuranRecognitionKit/blob/81b769ab52a054f773d1c0127f57315fdf02350c/Package.swift) | MIT | [NVIDIA FastConformer CC BY 4.0, per model notice](https://github.com/akhandafm17/QuranRecognitionKit/blob/81b769ab52a054f773d1c0127f57315fdf02350c/MODEL_NOTICE.md); bundled Qur'an text terms unverified |
@@ -47,10 +47,10 @@ Tilawa is the ancestor of this engine's normalizer, decoder and aligner; see [TH
 
 | Platform | CLI + C library/header | Node prebuild |
 |---|---|---|
-| macOS Apple silicon, 14+ | [qrk-darwin-arm64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.1.0/qrk-darwin-arm64.zip) | [node-darwin-arm64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.1.0/node-darwin-arm64.zip) |
-| macOS Intel, 14+ | [qrk-darwin-x64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.1.0/qrk-darwin-x64.zip) | [node-darwin-x64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.1.0/node-darwin-x64.zip) |
-| Windows x64 | [qrk-win32-x64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.1.0/qrk-win32-x64.zip) | [node-win32-x64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.1.0/node-win32-x64.zip) |
-| Linux x64, glibc 2.34+ | [qrk-linux-x64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.1.0/qrk-linux-x64.zip) | [node-linux-x64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.1.0/node-linux-x64.zip) |
+| macOS Apple silicon, 14+ | [qrk-darwin-arm64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.2.0/qrk-darwin-arm64.zip) | [node-darwin-arm64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.2.0/node-darwin-arm64.zip) |
+| macOS Intel, 14+ | [qrk-darwin-x64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.2.0/qrk-darwin-x64.zip) | [node-darwin-x64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.2.0/node-darwin-x64.zip) |
+| Windows x64 | [qrk-win32-x64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.2.0/qrk-win32-x64.zip) | [node-win32-x64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.2.0/node-win32-x64.zip) |
+| Linux x64, glibc 2.34+ | [qrk-linux-x64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.2.0/qrk-linux-x64.zip) | [node-linux-x64.zip](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.2.0/node-linux-x64.zip) |
 
 The Linux CLI needs ALSA runtime libraries. Windows may need Microsoft's current VC++ Redistributable. Desktop helpers embed the platform CPU ONNX Runtime and extract hash-verified runtime bytes into a user-local cache. No Node or Python interpreter is required for the helper. Host applications own signing/notarization and microphone permissions.
 
@@ -98,7 +98,7 @@ The binding serializes native worker calls and applies backpressure. [Node detai
 Swift 5.9+, iOS 16+, macOS 14+. Add the public repository to your package dependencies:
 
 ```swift
-.package(url: "https://github.com/yvezf/QuranRecitationKit.git", from: "0.1.1")
+.package(url: "https://github.com/yvezf/QuranRecitationKit.git", from: "0.2.0")
 ```
 
 Choose `QuranRecitationKit` and optionally `QuranRecitationAudio`. SwiftPM downloads the exact checksum-pinned Apple archive. No local Rust toolchain is required for this path.
@@ -114,7 +114,7 @@ let summary = try await r.stop()
 reader.cancel()
 ```
 
-Python: download the wheel for your platform from [v0.1.0](https://github.com/yvezf/QuranRecitationKit/releases/tag/v0.1.0), then `python -m pip install /path/to/downloaded.whl`. These are Python 3.9+ abi3 wheels, not a PyPI upload.
+Python: download the wheel for your platform from [v0.2.0](https://github.com/yvezf/QuranRecitationKit/releases/tag/v0.2.0), then `python -m pip install /path/to/downloaded.whl`. These are Python 3.9+ abi3 wheels, not a PyPI upload.
 
 ```python
 from quranrecitationkit import Recognizer, model_fetch
@@ -124,10 +124,10 @@ events = r.feed(pcm16k)  # iterable of mono 16 kHz floats
 summary = r.stop()
 ```
 
-.NET: download [QuranRecitationKit.0.1.0.nupkg](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.1.0/QuranRecitationKit.0.1.0.nupkg). Add the package reference without restoring, then restore using both the local folder and NuGet.org for Microsoft's dependencies:
+.NET: download [QuranRecitationKit.0.2.0.nupkg](https://github.com/yvezf/QuranRecitationKit/releases/download/v0.2.0/QuranRecitationKit.0.2.0.nupkg). Add the package reference without restoring, then restore using both the local folder and NuGet.org for Microsoft's dependencies:
 
 ```sh
-dotnet add package QuranRecitationKit --version 0.1.0 --no-restore
+dotnet add package QuranRecitationKit --version 0.2.0 --no-restore
 dotnet restore --source /folder/containing/the/nupkg --source https://api.nuget.org/v3/index.json
 ```
 
@@ -173,11 +173,11 @@ Confidence is an uncalibrated CTC margin, not a probability of correct recitatio
 
 ## Model and text
 
-[Model v1](https://github.com/yvezf/QuranRecitationKit/releases/tag/model-v1): 88,307,457 bytes, SHA-256 `822534428f1ed54eb802a9c43d4ecbabdfd8ba346b4d88d710414b0bbe7b4d69`. `qrk model fetch`, Python/.NET model-fetch helpers and Swift `ModelPack.download()` use the configured public release and verify its exact size/hash. No acoustic weights or recitation audio are in Git or SDK archives.
+[Model v2](https://github.com/yvezf/QuranRecitationKit/releases/tag/model-v2): 88,880,384 bytes, SHA-256 `8771deacfa0d7cacc0116d5c4a27222dcfcf52a96e555a7e9d26ab265c7c8f09`. `qrk model fetch`, Python/.NET model-fetch helpers and Swift `ModelPack.download()` use the configured public release and verify its exact size/hash. No acoustic weights or recitation audio are in Git or SDK archives.
 
 Distributed Arabic text is verbatim [Tanzil](https://tanzil.net), with attribution. Normalized/tokenized indices are built in memory and may be cached on the user's machine. NVIDIA's Unigram tokenizer conversion was compared against SentencePiece on all 77,441 source words. Source commit and model release are distinguished in the [notices](THIRD_PARTY_NOTICES.md).
 
-V1 export/preprocessing provenance remains qualified; attribution does not resolve missing permission. The clean NVIDIA/NeMo v2 candidate exports and quantizes, but fails the synthetic decision-parity gate and is not promoted. See [MODEL_CARD.md](MODEL_CARD.md) and the [export status](model/export/STATUS-2026-11-01.md).
+Model-v2 uses the directly pinned NVIDIA checkpoint and licensed NeMo preprocessing, without Cyberistic's exporter or graph. Source fidelity, public acceptance/retry checks on four desktop platforms, and the local owned-recording checks passed. The older model-v1 remains available as previous; its provenance qualification is preserved. See [MODEL_CARD.md](MODEL_CARD.md) and the [export status](model/export/STATUS-2026-11-01.md).
 
 ## Build and verify
 
@@ -195,7 +195,7 @@ npm --prefix bindings/node test
 
 For source-built inference, set `ORT_DYLIB_PATH` to an ONNX Runtime 1.24-compatible native library, or `QRK_EMBED_RUNTIME` when building to embed it. `tools/prepare_runtime.py` prepares the pinned runtime in CI, including Intel Mac linkage from Microsoft's static archive. To rebuild the Apple native archive rather than use the published one, run `python3 tools/build_xcframework.py`.
 
-Tests need no audio. Set `QRK_MODEL_DIR` for native inference tests and `QRK_PARITY_TOKEN_MAP` for a local prior-index comparison. CI downloads and verifies model-v1 explicitly and enables the model tests; generated matching indices remain user-local. [Publication verification](docs/PUBLICATION-2026-11-01.md) includes fresh-clone commands and actual CI links. [Phase A](docs/PHASE-A-VERIFICATION.md) and [Phase B](docs/PHASE-B-VERIFICATION.md) are historical extraction reports; their pre-publication qualifications are superseded where the publication report provides new evidence. [Maintainer release guide](docs/RELEASING.md).
+Tests need no audio. Set `QRK_MODEL_DIR` for native inference tests and `QRK_PARITY_TOKEN_MAP` for a local prior-index comparison. CI downloads and verifies the pinned default model explicitly and enables the model tests; generated matching indices remain user-local. [Publication verification](docs/PUBLICATION-2026-11-01.md) includes fresh-clone commands and actual CI links. [Phase A](docs/PHASE-A-VERIFICATION.md) and [Phase B](docs/PHASE-B-VERIFICATION.md) are historical extraction reports; their pre-publication qualifications are superseded where the publication report provides new evidence. [Maintainer release guide](docs/RELEASING.md).
 
 ## License
 

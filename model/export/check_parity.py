@@ -23,6 +23,6 @@ def main():
         tokens_equal=valid and collapse(x.argmax(-1)[0])==collapse(y.argmax(-1)[0])
         rows.append({'fixture':name,'samples':int(sample['length'][0]),'shape_equal':x.shape==y.shape,'tokens_equal':bool(tokens_equal),'v1_tokens':collapse(x.argmax(-1)[0]),'candidate_tokens':collapse(y.argmax(-1)[0]),'max_absolute_logit_error':float(np.max(np.abs(x-y)))if valid else None})
     success=all(row['tokens_equal'] for row in rows)
-    a.report.write_text(json.dumps({'synthetic_parity':success,'rows':rows,'release_authorized':False,'limitations':'Synthetic parity is necessary, not evidence of real-recitation accuracy. No model is promoted automatically.'},indent=2)+'\n')
+    a.report.write_text(json.dumps({'synthetic_parity':success,'rows':rows,'release_authorized':False,'mode':'report-only' if a.report_only else 'strict-raw-token-compatibility','limitations':'Raw greedy CTC compatibility on non-speech tones is a diagnostic, not accepted-verse parity or recitation accuracy. Promotion requires VALIDATION.md source, native-event and local-recording gates. No model is promoted automatically.'},indent=2)+'\n')
     if not success and not a.report_only:raise SystemExit('Candidate failed raw decoder compatibility; v1 remains pinned.')
 if __name__=='__main__':main()

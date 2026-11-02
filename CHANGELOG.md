@@ -1,22 +1,21 @@
 # Changelog
 
-All notable changes to this project are documented here. The format follows Keep a Changelog; versions follow Semantic Versioning.
+## [0.2.0] — 2026-11-01
 
-## [Unreleased]
+- Default model-v2: direct, hash-pinned NVIDIA/NeMo export with licensed preprocessing; no Cyberistic export in the default chain.
+- Corrected compression: dynamic int8 convolution plus symmetric int4 constant MatMul; removed unrepresentative activation calibration and the rejected ARM-crashing static-int8 candidate.
+- Fixed preprocessing precision past NeMo's implicit float32 cast. Source fidelity passes at the original tolerance.
+- Published source/native/local validation receipts, retaining raw non-speech decoder differences and the original failures.
+- Native model metadata now supplies versioned cache paths and manifests to Swift/.NET; package versions come from build metadata.
+- Model-v1 remains available for older SDKs. No recognition-acceptance thresholds or target-text rules changed.
 
-### Added
-- Cross-platform core in Rust (`core/`): engine, ONNX runner, microphone capture, C ABI, and the `qrk` CLI/sidecar (`model fetch`, `devices`, `wav`, `mic`, `serve`).
-- `protocol/`: one JSON event schema and the sidecar protocol (stdio JSON lines, localhost WebSocket) with JS/Python/C# clients.
-- Bindings: Swift (SwiftPM + XCFramework), Node (`@quranrecitationkit/node`), Python (`quranrecitationkit`), .NET (`QuranRecitationKit`).
-- Runtime corpus index built from Tanzil's verbatim text at startup (no derived Qur'an index is distributed).
-- Model release `model-v1` (NVIDIA FastConformer Arabic, CC BY 4.0; mixed int4/int8 ONNX; dual output) and the reproducible `model/export/` pipeline toward `model-v2`.
-- Examples: node-mic, python-wav, dotnet-console, swift-ios, electron-plugin.
+## [0.1.1] — 2026-11-01
+
+- Fixed version-based SwiftPM manifest evaluation; reused the checksum-pinned v0.1.0 native archive.
 
 ## [0.1.0] — 2026-11-01
 
-Internal milestone: the recognizer extracted from Hablobi into a standalone Swift package (now `bindings/swift/`).
-
-### Local implementation status
-- Phase A committed separately; Phase B rebases Swift onto the shared C ABI and adds PyO3 abi3 and netstandard2.0 bindings.
-- Apple XCFramework includes static ONNX Runtime; native archives, wheel notice staging and aggregate NuGet packaging are prepared.
-- Model publication, remote CI, and Swift public archive checksum pinning remain publisher-review steps. No model-v1 asset is claimed uploaded.
+- Published the Rust core, C ABI, offline ONNX runner, mic/resampler, CLI and local WebSocket/stdio sidecar.
+- Swift, Node, Python and .NET bindings, platform binaries, examples and model-v1 release.
+- Verbatim Tanzil corpus with in-memory/local index generation; third-party notices and cross-platform CI.
+- Registry publication remains separate; npm/PyPI/NuGet uploads have not been performed.

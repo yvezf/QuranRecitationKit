@@ -68,7 +68,7 @@ impl NativeRecognizer {
 }
 #[pyfunction]
 fn version() -> &'static str {
-    "0.1.0"
+    env!("CARGO_PKG_VERSION")
 }
 #[pyfunction]
 #[pyo3(signature=(cache_dir=None))]
