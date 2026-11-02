@@ -73,6 +73,17 @@ The reviewed Apple ZIP SHA-256 is `ad7f79e7cdbac3c41cc1453232da518f67adf4dc4d997
 
 The release has **15 assets**: four CLI/C archives, four Node archives, four Python wheels, one aggregate NuGet, the Apple ZIP and its checksum. Native release builders passed on Windows x64, Linux x64 and both Mac architectures; Apple packaging/tests passed. Implementation CI additionally passes Linux ARM source/native inference tests and the iOS example build. Linux ARM has source CI, not a promised downloadable archive.
 
+The final checksum-pin CI completed successfully on 2026-11-02 at 01:38 UTC. Both full source runs and all release builders are green; later commits add Markdown verification receipts only.
+
+| Final pin CI job | Result |
+|---|---|
+| macOS Apple silicon | Pass |
+| macOS Intel | Pass |
+| Windows x64 | Pass |
+| Linux x64 | Pass |
+| Linux ARM64 (source/native inference) | Pass |
+| Swift tests, iOS Simulator example build, tagged SwiftPM dependency | Pass |
+
 The release CLI/C archives for all four platforms contain the `yvezf` owner URL and no former-owner URL. Fourteen native files across those archives, the Apple-silicon Node/wheel and the four-RID NuGet were inspected; none contains the former owner. The Node library has no owner URL because its directory-based model loader does not link the downloader. Downloaded archive digests match GitHub's asset digests. [Binary integrity receipt](verification/release-0.2.1-assets.md).
 
 ## macOS signing and remaining limits
