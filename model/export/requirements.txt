@@ -8,5 +8,5 @@ onnx-ir==0.1.5
 numpy==1.26.4
 # NeMo 2.4 predates NumPy-2-only Arrow wheels and newer PEFT APIs.
 pyarrow==19.0.1
-datasets==3.6.0
+datasets==5.0.1
 peft==0.15.2
