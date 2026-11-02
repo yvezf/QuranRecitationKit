@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1] — 2026-11-01
+
+- Fixed continuous multi-ayah recognition: anchored positional alignment, real fresh-observation evidence, ayah-boundary confirmation, bounded backtrack and ordered per-ayah terminal scoring. A completed earlier ayah survives continuing speech.
+- Added a timeline-driven two-ayah CTC logit fixture, long rolling-window, repeated-phrase, stop-only and wrong-target regressions, plus a local owned-recording gate.
+- Added CLI help text, bounded non-TTY download progress, real raw-transcript confidence, shared mean downmix and clear non-zero no-input-device errors. Match confidence now maps its uncalibrated margin smoothly instead of clipping at 1.
+- Added Linux aarch64 CI and an isolated no-input ALSA CLI check. No speech-identity threshold reduction or model changes.
+- Documented macOS quarantine and notarization status; Developer-ID signing remains a credential-dependent follow-up.
+
 ## [0.2.0] — 2026-11-01
 
 - Default model-v2: direct, hash-pinned NVIDIA/NeMo export with licensed preprocessing; no Cyberistic export in the default chain.

@@ -79,3 +79,5 @@ The generator requires [SentencePiece 0.2.1](https://github.com/google/sentencep
 No recitation recording, PCM, spectrogram, embedding, private rights manifest or Quran translation is included. The model is a general Arabic speech checkpoint; no new acoustic fine-tuning is claimed. The numerical completion thresholds are retained heuristics, not a calibrated Tajweed or zero-false-accept claim. There is no trained endpoint classifier in this repository.
 
 For Intel macOS desktop distributions, ONNX Runtime 1.24.2 is linked into a C-API shared library from Microsoft’s checksum-pinned Apple static archive because its PyPI wheel is unavailable for that architecture. Runtime/model sources and weights are unchanged. Build provenance is included in native release archives.
+
+Linux audio capture dynamically uses the host-provided [ALSA library](https://github.com/alsa-project/alsa-lib), LGPL-2.1-or-later. ALSA is not embedded in the release archives. The small MIT CLI probe shim uses its thread-local error-handler API and restores the prior handler after enumeration/setup; it does not redirect global stderr or replace system libraries.

@@ -1064,7 +1064,7 @@ dependencies = [
 
 [[package]]
 name = "qrk-core"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "hex",
  "serde",
@@ -1077,7 +1077,7 @@ dependencies = [
 
 [[package]]
 name = "qrk-onnx"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "directories",
  "hex",
@@ -1092,7 +1092,7 @@ dependencies = [
 
 [[package]]
 name = "qrk-python"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "pyo3",
  "qrk-core",

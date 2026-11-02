@@ -1,4 +1,5 @@
 //! Offline expected-text recognition. This crate owns no files, network or audio device.
+mod continuous;
 pub mod corpus;
 pub mod ctc;
 pub mod session;

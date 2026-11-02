@@ -110,10 +110,67 @@ impl AudioResampler {
 }
 pub fn devices() -> Result<Vec<String>> {
     let host = cpal::default_host();
-    host.input_devices()
+    let devices: Vec<_> = host
+        .input_devices()
         .map_err(error)?
+        .filter(|d| d.default_input_config().is_ok())
         .map(|d| d.name().map_err(error))
-        .collect()
+        .collect::<Result<_>>()?;
+    if devices.is_empty() {
+        return Err(error("no input device available"));
+    }
+    Ok(devices)
+}
+fn input_device(name: Option<&str>) -> Result<cpal::Device> {
+    let host = cpal::default_host();
+    if let Some(name) = name {
+        host.input_devices()
+            .map_err(error)?
+            .find(|d| d.name().is_ok_and(|n| n == name))
+            .ok_or_else(|| error("input device not found"))
+    } else {
+        host.default_input_device()
+            .ok_or_else(|| error("no input device available"))
+    }
+}
+pub fn check_input_device(name: Option<&str>) -> Result<()> {
+    input_device(name)?.default_input_config().map_err(error)?;
+    Ok(())
+}
+/// CLI opt-in: suppress repetitive ALSA probe diagnostics on this thread only.
+/// Returned errors still propagate. The prior handler is restored on unwind.
+pub fn quiet_device_probe<T>(operation: impl FnOnce() -> T) -> T {
+    #[cfg(target_os = "linux")]
+    let _scope = alsa_probe::Scope::new();
+    operation()
+}
+#[cfg(target_os = "linux")]
+mod alsa_probe {
+    unsafe extern "C" {
+        fn qrk_alsa_quiet_begin() -> *mut std::ffi::c_void;
+        fn qrk_alsa_quiet_end(scope: *mut std::ffi::c_void);
+    }
+    pub struct Scope(*mut std::ffi::c_void);
+    impl Scope {
+        pub fn new() -> Self {
+            Self(unsafe { qrk_alsa_quiet_begin() })
+        }
+    }
+    impl Drop for Scope {
+        fn drop(&mut self) {
+            unsafe {
+                qrk_alsa_quiet_end(self.0);
+            }
+        }
+    }
+}
+/// Mean, never sum: duplicated stereo channels must preserve mono amplitude.
+pub fn downmix_frame(frame: &[f32]) -> f32 {
+    mean_samples(frame.iter().copied())
+}
+fn mean_samples(samples: impl Iterator<Item = f32>) -> f32 {
+    let (sum, count) = samples.fold((0f32, 0usize), |(sum, n), v| (sum + v, n + 1));
+    sum / count.max(1) as f32
 }
 pub struct Capture {
     _stream: cpal::Stream,
@@ -124,16 +181,7 @@ pub struct Capture {
 }
 impl Capture {
     pub fn start(name: Option<&str>, sender: SyncSender<Vec<f32>>) -> Result<Self> {
-        let host = cpal::default_host();
-        let device = if let Some(name) = name {
-            host.input_devices()
-                .map_err(error)?
-                .find(|d| d.name().is_ok_and(|n| n == name))
-                .ok_or_else(|| error("input device not found"))?
-        } else {
-            host.default_input_device()
-                .ok_or_else(|| error("no default input device"))?
-        };
+        let device = input_device(name)?;
         let config = device.default_input_config().map_err(error)?;
         let rate = config.sample_rate().0;
         let channels = config.channels();
@@ -204,11 +252,7 @@ where
                 let mono = data
                     .chunks(channels as usize)
                     .map(|frame| {
-                        frame
-                            .iter()
-                            .map(|x| cpal::Sample::to_sample::<f32>(*x))
-                            .sum::<f32>()
-                            / channels as f32
+                        mean_samples(frame.iter().map(|x| cpal::Sample::to_sample::<f32>(*x)))
                     })
                     .collect();
                 if sender.try_send(mono).is_err() {
@@ -246,5 +290,14 @@ mod tests {
     fn mono_passthrough() {
         let mut r = AudioResampler::new(16000).unwrap();
         assert_eq!(r.process(&[1., 0., -1.]).unwrap(), vec![1., 0., -1.]);
+    }
+    #[test]
+    fn stereo_downmix_is_mean_and_preserves_mono_gain() {
+        for value in [-1., -0.3, 0., 0.7, 1.] {
+            assert_eq!(downmix_frame(&[value, value]), value);
+            assert_eq!(downmix_frame(&[value]), value);
+        }
+        assert_eq!(downmix_frame(&[1., -1.]), 0.);
+        assert_eq!(downmix_frame(&[0.8, 0.2]), 0.5);
     }
 }

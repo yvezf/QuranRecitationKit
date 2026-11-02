@@ -3,7 +3,7 @@
 from pathlib import Path
 import argparse,hashlib,json,re,zipfile
 root=Path(__file__).resolve().parent.parent
-p=argparse.ArgumentParser();p.add_argument('--archive',type=Path);p.add_argument('--pin',action='store_true');p.add_argument('--tag',default='v0.2.0');a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('--archive',type=Path);p.add_argument('--pin',action='store_true');p.add_argument('--tag',default='v0.2.1');a=p.parse_args()
 archive=a.archive or root/'dist/QRKFFI.xcframework.zip'
 if a.archive is None:
     source=root/'bindings/swift/Artifacts/QRKFFI.xcframework';archive.parent.mkdir(exist_ok=True)

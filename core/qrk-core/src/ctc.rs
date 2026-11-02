@@ -5,6 +5,82 @@ pub struct Decode {
     pub tokens: Vec<u32>,
     pub frames: Vec<u32>,
 }
+#[derive(Clone, Debug)]
+pub struct WordEmission {
+    pub text: String,
+    pub start: usize,
+    pub end: usize,
+}
+/// Preserve decoded-word sample alignment instead of assuming canonical token
+/// IDs must equal the model's Arabic spelling (for example عم / عما).
+pub fn word_emissions(frames: &[u32], pieces: &[String], blank: u32) -> Vec<WordEmission> {
+    let mut words: Vec<WordEmission> = Vec::new();
+    let mut prior = None;
+    for (frame, id) in frames.iter().copied().enumerate() {
+        if id == blank {
+            prior = Some(id);
+            continue;
+        }
+        let Some(piece) = pieces.get(id as usize) else {
+            continue;
+        };
+        if piece == "<unk>" || piece == "<blank>" {
+            continue;
+        }
+        if prior == Some(id) {
+            if let Some(word) = words.last_mut() {
+                word.end = frame + 1;
+            }
+        } else {
+            if piece.starts_with('▁') || words.is_empty() {
+                words.push(WordEmission {
+                    text: String::new(),
+                    start: frame,
+                    end: frame + 1,
+                });
+            }
+            let word = words.last_mut().unwrap();
+            word.text.push_str(&piece.replace('▁', " "));
+            word.end = frame + 1;
+        }
+        prior = Some(id);
+    }
+    for word in &mut words {
+        word.text = crate::text::normalize_arabic(&word.text);
+    }
+    words.retain(|w| !crate::text::semantic_words(&w.text).is_empty());
+    words
+}
+/// Geometric mean of the peak posterior for each emitted greedy CTC token.
+/// This describes the raw decode, not the probability of correct recitation.
+pub fn transcript_confidence(logits: &[f32], time: usize, vocab: usize, blank: u32) -> Result<f64> {
+    validate(logits, time, vocab, &[], blank)?;
+    let mut peaks: Vec<f64> = Vec::new();
+    let mut prior = None;
+    for row in logits.chunks_exact(vocab) {
+        let (id, p) = row
+            .iter()
+            .enumerate()
+            .max_by(|a, b| a.1.total_cmp(b.1))
+            .unwrap();
+        if id as u32 != blank {
+            if prior == Some(id) {
+                let last = peaks.last_mut().unwrap();
+                *last = last.max(*p as f64);
+            } else {
+                peaks.push(*p as f64);
+            }
+        }
+        prior = Some(id);
+    }
+    Ok(if peaks.is_empty() {
+        0.
+    } else {
+        (peaks.iter().sum::<f64>() / peaks.len() as f64)
+            .exp()
+            .clamp(0., 1.)
+    })
+}
 pub fn collapse(frames: &[u32], blank: u32) -> Vec<u32> {
     let mut previous = None;
     frames
@@ -292,5 +368,24 @@ mod shared_fixture_tests {
                 );
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod confidence_tests {
+    use super::*;
+    #[test]
+    fn raw_confidence_uses_emission_posteriors_and_is_not_placeholder_zero() {
+        let rows: Vec<f32> = [0.75f32, 0.25, 0.8, 0.2, 0.1, 0.9, 0.7, 0.3]
+            .iter()
+            .map(|p| p.ln())
+            .collect();
+        assert!(
+            (transcript_confidence(&rows, 4, 2, 1).unwrap() - (0.8f64 * 0.7).sqrt()).abs() < 1e-6
+        );
+        assert_eq!(
+            transcript_confidence(&[0.1f32.ln(), 0.9f32.ln()], 1, 2, 1).unwrap(),
+            0.
+        );
     }
 }

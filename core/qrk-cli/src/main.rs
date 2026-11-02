@@ -5,7 +5,7 @@ use qrk_core::{Config, Event, Target};
 use qrk_onnx::{load_corpus, ModelPack, Recognizer};
 use serde_json::{json, Value};
 use std::{
-    io::{self, BufRead, Write},
+    io::{self, BufRead, IsTerminal, Write},
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -33,11 +33,14 @@ struct Args {
 }
 #[derive(Subcommand)]
 enum Command {
+    /// Download and verify the pinned offline model.
     Model {
         #[command(subcommand)]
         command: ModelCommand,
     },
+    /// List usable microphone input devices.
     Devices,
+    /// Track an expected surah or ayah range in a WAV file.
     Wav {
         #[arg(long)]
         surah: u16,
@@ -45,6 +48,7 @@ enum Command {
         ayahs: Option<String>,
         file: PathBuf,
     },
+    /// Track live microphone audio (explicit capture permission required).
     Mic {
         #[arg(long)]
         surah: u16,
@@ -53,6 +57,7 @@ enum Command {
         #[arg(long)]
         seconds: Option<f64>,
     },
+    /// Run the local WebSocket or stdio JSON/PCM sidecar.
     Serve {
         #[arg(long, default_value_t = 7877)]
         port: u16,
@@ -61,10 +66,12 @@ enum Command {
         #[arg(long)]
         stdio: bool,
     },
+    /// Check the bundled Quran corpus and tokenizer without a model.
     Selftest,
 }
 #[derive(Subcommand)]
 enum ModelCommand {
+    /// Explicit one-time download with size and SHA-256 verification.
     Fetch {
         #[arg(long)]
         cache: Option<PathBuf>,
@@ -134,10 +141,13 @@ fn wav(args: &Args, surah: u16, ayahs: Option<&str>, file: &Path) -> AnyResult<i
     for sample in samples {
         frame.push(sample?);
         if frame.len() == format.channels as usize {
-            mono.push(frame.iter().sum::<f32>() / format.channels as f32);
+            mono.push(qrk_audio::downmix_frame(&frame));
             frame.clear();
         }
         if mono.len() >= 1024 {
+            if !frame.is_empty() {
+                return Err("WAV ends with an incomplete channel frame".into());
+            }
             pending.extend(resampler.process(&mono)?);
             mono.clear();
             while pending.len() >= 4800 {
@@ -173,10 +183,14 @@ async fn mic(
     device: Option<&str>,
     seconds: Option<f64>,
 ) -> AnyResult<i32> {
+    if seconds.is_some_and(|s| !s.is_finite() || s <= 0.) {
+        return Err("microphone duration must be finite and positive".into());
+    }
+    qrk_audio::quiet_device_probe(|| qrk_audio::check_input_device(device))?;
     let mut engine = recognizer(args)?;
     engine.set_expected(Target::surah(surah))?;
     let (sender, receiver) = std::sync::mpsc::sync_channel(64);
-    let capture = Capture::start(device, sender)?;
+    let capture = qrk_audio::quiet_device_probe(|| Capture::start(device, sender))?;
     let mut resampler = AudioResampler::new(capture.sample_rate)?;
     let stop = Arc::new(AtomicBool::new(false));
     let signal = stop.clone();
@@ -217,8 +231,10 @@ async fn mic(
         }
     }
     let dropped = capture.dropped_chunks();
+    let mut received_audio = !pending.is_empty();
     drop(capture);
     while let Ok(chunk) = receiver.try_recv() {
+        received_audio |= !chunk.is_empty();
         pending.extend(resampler.process(&chunk)?);
     }
     pending.extend(resampler.finish()?);
@@ -231,12 +247,42 @@ async fn mic(
         );
     }
     let summary = engine.stop()?;
+    if !received_audio && summary.duration == 0. {
+        return Err("no audio received from the input device".into());
+    }
     events(&summary.events, args.json);
     println!(
         "{}",
         json!({"type":"summary","verses":summary.verses,"transcript":summary.transcript,"duration":summary.duration,"dropped_chunks":dropped})
     );
-    Ok(0)
+    Ok(if summary.verses.is_empty() { 1 } else { 0 })
+}
+struct DownloadProgress {
+    tty: bool,
+    last: Option<u8>,
+}
+impl DownloadProgress {
+    fn new(tty: bool) -> Self {
+        Self { tty, last: None }
+    }
+    fn update(&mut self, fraction: f64) -> Option<String> {
+        if !fraction.is_finite() {
+            return None;
+        }
+        let mut percent = (fraction.clamp(0., 1.) * 100.).floor() as u8;
+        if !self.tty {
+            percent = percent / 10 * 10;
+        }
+        if self.last == Some(percent) {
+            return None;
+        }
+        self.last = Some(percent);
+        Some(if self.tty {
+            format!("\rModel: {percent}%")
+        } else {
+            format!("Model: {percent}%\n")
+        })
+    }
 }
 #[tokio::main]
 async fn main() {
@@ -244,14 +290,24 @@ async fn main() {
     let result: AnyResult<i32> = match &args.command {
         Command::Model {
             command: ModelCommand::Fetch { cache },
-        } => ModelPack::fetch(cache.as_deref(), |p| eprint!("\rModel: {:.0}%", p * 100.))
+        } => {
+            let mut progress =
+                DownloadProgress::new(io::stdout().is_terminal() && io::stderr().is_terminal());
+            ModelPack::fetch(cache.as_deref(), |p| {
+                if let Some(message) = progress.update(p) {
+                    eprint!("{message}");
+                }
+            })
             .map(|p| {
-                eprintln!();
+                if progress.tty {
+                    eprintln!();
+                }
                 println!("{}", p.model_path.parent().unwrap().display());
                 0
             })
-            .map_err(Into::into),
-        Command::Devices => qrk_audio::devices()
+            .map_err(Into::into)
+        }
+        Command::Devices => qrk_audio::quiet_device_probe(qrk_audio::devices)
             .map(|d| {
                 println!("{}", json!(d));
                 0
@@ -279,5 +335,21 @@ async fn main() {
             eprintln!("qrk: {error}");
             std::process::exit(2)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn piped_download_progress_is_limited_to_ten_percent_steps() {
+        let mut p = DownloadProgress::new(false);
+        let messages: Vec<_> = (0..=10000)
+            .filter_map(|n| p.update(n as f64 / 10000.))
+            .collect();
+        assert_eq!(messages.len(), 11);
+        assert_eq!(messages[0], "Model: 0%\n");
+        assert_eq!(messages[10], "Model: 100%\n");
+        assert!(messages.iter().all(|m| !m.contains('\r')));
     }
 }

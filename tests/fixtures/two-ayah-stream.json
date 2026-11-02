@@ -1,0 +1,12 @@
+{
+  "description": "Synthetic CTC logit schedule, not recorded audio or a distributed Quran token index. Target token IDs are obtained from the runtime corpus.",
+  "surah": 78,
+  "ayahs": [1, 2],
+  "frame_samples": 1280,
+  "initial_blank_frames": 4,
+  "token_repeat_frames": 2,
+  "separator_blank_frames": 1,
+  "trailing_blank_frames": 8,
+  "winner_logit": -0.001,
+  "other_logit": -12.0
+}

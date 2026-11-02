@@ -1,6 +1,6 @@
 # Python binding
 
-Python 3.9+ abi3 wheel, powered by PyO3. Download the matching wheel from https://github.com/yvezf/QuranRecitationKit/releases/tag/v0.2.0 and install it with `python -m pip install /path/to/downloaded.whl`. No PyPI registry upload has been performed. Inference releases the GIL; each session serializes calls. Returned events/summary use the shared JSON schema. A synchronous `on_event` callback is optional. Do not re-enter a session from its callback.
+Python 3.9+ abi3 wheel, powered by PyO3. Download the matching wheel from https://github.com/yvezf/QuranRecitationKit/releases/tag/v0.2.1 and install it with `python -m pip install /path/to/downloaded.whl`. No PyPI registry upload has been performed. Inference releases the GIL; each session serializes calls. Returned events/summary use the shared JSON schema. A synchronous `on_event` callback is optional. Do not re-enter a session from its callback.
 
 ```python
 from quranrecitationkit import Recognizer

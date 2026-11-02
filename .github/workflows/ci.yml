@@ -18,6 +18,7 @@ jobs:
           - {os: macos-15-intel, rid: osx-x64}
           - {os: windows-2022, rid: win-x64}
           - {os: ubuntu-22.04, rid: linux-x64}
+          - {os: ubuntu-24.04-arm, rid: linux-arm64}
     runs-on: ${{ matrix.os }}
     env:
       MACOSX_DEPLOYMENT_TARGET: '14.0'
@@ -43,6 +44,7 @@ jobs:
       - run: cargo fmt --manifest-path core/Cargo.toml --all --check
       - run: cargo clippy --manifest-path core/Cargo.toml --workspace --all-targets -- -D warnings
       - run: cargo build --manifest-path core/Cargo.toml --workspace --release --locked
+      - run: python tools/check_cli.py
       - run: python tools/ci_model.py
       - run: cargo test --manifest-path core/Cargo.toml --workspace --locked
       - run: cargo run --manifest-path core/Cargo.toml -p qrk-cli --release -- selftest

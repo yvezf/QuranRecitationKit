@@ -7,7 +7,7 @@ on:
       release_tag:
         description: Release tag to build
         required: true
-        default: v0.2.0
+        default: v0.2.1
 permissions:
   contents: read
 jobs:
@@ -47,6 +47,7 @@ jobs:
         run: pip install onnxruntime==1.24.2
       - run: python tools/prepare_runtime.py
       - run: cargo build --manifest-path core/Cargo.toml --workspace --release --locked
+      - run: python tools/check_cli.py
       - run: python tools/ci_model.py
       - run: cargo test --manifest-path core/Cargo.toml --workspace --release --locked
       - run: npm --prefix bindings/node ci --ignore-scripts
