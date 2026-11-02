@@ -3,7 +3,7 @@
 [![Cross-platform CI](https://github.com/yvezf/QuranRecitationKit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/yvezf/QuranRecitationKit/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/yvezf/QuranRecitationKit)](https://github.com/yvezf/QuranRecitationKit/releases/tag/v0.3.0)
 
-Offline Quran recitation tracking and lecture quotation spotting for your app. Supply the passage you expect and mono audio; receive provisional word progress, ayah matches, transcripts and neutral retry events.
+Offline Quran recitation tracking and lecture quotation spotting for your app. Track a known passage with word progress and ayah matches, or spot quotations in lecture audio without selecting a passage first.
 
 **One Rust engine. C ABI. Swift, Node, Python and .NET bindings. Local WebSocket/stdio helper.** Native CI passed on macOS arm64/x64, Windows x64 and Linux x64, including the public model download and actual ONNX inference. The iOS SwiftUI example also builds. [Releases](https://github.com/yvezf/QuranRecitationKit/releases/tag/v0.3.0) · [Model](https://github.com/yvezf/QuranRecitationKit/releases/tag/model-v2) · [Publication verification](docs/PUBLICATION-2026-11-01.md).
 
@@ -22,7 +22,7 @@ Offline Quran recitation tracking and lecture quotation spotting for your app. S
 
 ## For transcription and note-taking apps
 
-Feed the same 16 kHz mono PCM as your lecture transcriber to an independent `Spotter`. It emits `quote_detected` with an Arabic span, surah/ayah and word range, timestamps, verbatim Tanzil text and a display reference. The host can propose replacing the overlapping ASR words while retaining the original transcript. Start with `qrk model fetch`, then `qrk spot --wav lecture.wav --json`; microphone capture is explicit with `qrk spot --mic --json`. [Integration guide](docs/SPOTTING.md) · [Python lecture example](examples/python-lecture/README.md) · [Node notes example](examples/node-notes/README.md).
+Feed the same 16 kHz mono PCM as your lecture transcriber to an independent `Spotter`. It emits `quote_detected` with an Arabic span, surah/ayah and word range, timestamps, verbatim Tanzil text and a display reference. The host can propose replacing the overlapping ASR words while retaining the original transcript. Start with `qrk model fetch`, then `qrk spot --wav lecture.wav --json`; microphone capture is explicit with `qrk spot --mic --json`. [Integration guide](docs/SPOTTING.md) · [Verification](docs/SPOTTING-VERIFICATION-2026-11-01.md) · [Python lecture example](examples/python-lecture/README.md) · [Node notes example](examples/node-notes/README.md).
 
 Already have ASR text? `matchText` / `match_text` returns model-free candidates, always `verified:false`. Audio verification requires clear matching speech, normally at least three distinct words and 1.5 seconds; complete short ayahs need a higher margin. Common phrases stay ambiguous, with no selected citation. English is not a retrieval/transcription language for this Arabic-only model; distance/reverb can lower recall, and classroom precision/recall is unmeasured. Results are suggestions, not judgments or Tajweed assessment. Display [Tanzil](https://tanzil.net) attribution/link and reproduce its notice whenever displaying `text_uthmani`.
 
