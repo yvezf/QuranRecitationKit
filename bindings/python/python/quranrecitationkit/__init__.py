@@ -1,8 +1,8 @@
 """Expected-text recitation tracking. PCM never leaves this machine."""
 import json
 from threading import RLock
-from ._native import NativeRecognizer, version, model_fetch
-__all__ = ["Recognizer", "version", "model_fetch"]
+from ._native import NativeRecognizer, NativeSpotter, match_text_json, version, model_fetch
+__all__ = ["Recognizer", "Spotter", "match_text", "matchText", "version", "model_fetch"]
 
 class Recognizer:
     """Serialize calls per session. feed() returns events; on_event optionally receives each.
@@ -10,8 +10,10 @@ class Recognizer:
     Callbacks execute synchronously on the calling thread. Model inference releases the GIL.
     Do not call mutating session methods from inside a callback; handle returned events instead.
     """
+    _native_type = NativeRecognizer
+
     def __init__(self, model_dir, configuration=None, on_event=None):
-        self._native = NativeRecognizer(str(model_dir), json.dumps(configuration or {}))
+        self._native = self._native_type(str(model_dir), json.dumps(configuration or {}))
         self._lock = RLock()
         self._dispatching = False
         self.on_event = on_event
@@ -52,3 +54,21 @@ class Recognizer:
         with self._lock:
             self._guard()
             self._native.reset()
+
+
+def match_text(segment):
+    """Model-free candidates, always verified=False. Never auto-insert a candidate."""
+    if not isinstance(segment, str):
+        raise TypeError("segment must be a string")
+    return json.loads(match_text_json(segment))
+
+matchText = match_text
+
+class Spotter(Recognizer):
+    """Independent open-set quotation session; timestamps are relative to supplied PCM."""
+    _native_type = NativeSpotter
+    match_text = staticmethod(match_text)
+    matchText = match_text
+
+    def set_expected(self, target):
+        raise RuntimeError("Spot mode has no expected target")

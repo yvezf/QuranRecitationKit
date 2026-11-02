@@ -88,7 +88,66 @@ fn model_fetch(py: Python<'_>, cache_dir: Option<String>) -> PyResult<String> {
 #[pymodule]
 fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<NativeRecognizer>()?;
+    m.add_class::<NativeSpotter>()?;
+    m.add_function(wrap_pyfunction!(match_text_json, m)?)?;
     m.add_function(wrap_pyfunction!(version, m)?)?;
     m.add_function(wrap_pyfunction!(model_fetch, m)?)?;
     Ok(())
+}
+
+#[pyclass(name = "NativeSpotter")]
+struct NativeSpotter {
+    inner: Mutex<qrk_onnx::Spotter>,
+}
+#[pymethods]
+impl NativeSpotter {
+    #[new]
+    #[pyo3(signature=(model_dir,config_json="{}"))]
+    fn new(py: Python<'_>, model_dir: String, config_json: &str) -> PyResult<Self> {
+        let config: qrk_core::SpotConfig =
+            serde_json::from_str(config_json).map_err(|e| PyValueError::new_err(e.to_string()))?;
+        py.allow_threads(move || {
+            Ok(Self {
+                inner: Mutex::new(
+                    qrk_onnx::Spotter::new(
+                        ModelPack::from_directory(model_dir).map_err(error)?,
+                        load_corpus(None).map_err(error)?,
+                        config,
+                    )
+                    .map_err(error)?,
+                ),
+            })
+        })
+    }
+    fn feed(&self, py: Python<'_>, pcm16k: Vec<f32>) -> PyResult<String> {
+        py.allow_threads(|| {
+            serde_json::to_string(
+                &self
+                    .inner
+                    .lock()
+                    .map_err(error)?
+                    .feed(&pcm16k)
+                    .map_err(error)?,
+            )
+            .map_err(error)
+        })
+    }
+    fn stop(&self, py: Python<'_>) -> PyResult<String> {
+        py.allow_threads(|| {
+            serde_json::to_string(&self.inner.lock().map_err(error)?.stop().map_err(error)?)
+                .map_err(error)
+        })
+    }
+    fn reset(&self, py: Python<'_>) -> PyResult<()> {
+        py.allow_threads(|| {
+            self.inner.lock().map_err(error)?.reset();
+            Ok(())
+        })
+    }
+}
+#[pyfunction]
+fn match_text_json(py: Python<'_>, segment: String) -> PyResult<String> {
+    py.allow_threads(|| {
+        serde_json::to_string(&qrk_onnx::match_text(&segment).map_err(error)?).map_err(error)
+    })
 }

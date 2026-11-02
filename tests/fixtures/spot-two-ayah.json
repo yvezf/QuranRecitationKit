@@ -1,0 +1,10 @@
+{
+  "surah": 78,
+  "ayah_from": 1,
+  "ayah_to": 2,
+  "frame_samples": 1280,
+  "leading_frames": 25,
+  "token_frames": 2,
+  "blank_frames": 1,
+  "seconds": 12
+}

@@ -4,7 +4,7 @@ use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashMap};
 use std::ops::Range;
 use tokenizers::Tokenizer;
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Surah {
     pub number: u16,
     pub name_en: String,
@@ -160,6 +160,31 @@ impl Corpus {
             verses,
         })
     }
+    /// Cache reuse must never change verbatim display text or canonical word boundaries.
+    pub fn validates_index(&self, index: &CorpusIndex) -> bool {
+        index.version == 1
+            && index.cache_key == self.cache_key()
+            && index.surahs == self.surahs
+            && index.verses.len() == self.ayahs.len()
+            && index.verses.iter().zip(&self.ayahs).all(|(v, a)| {
+                let arabic = self.numbered_text(a);
+                let words: Vec<_> = text::semantic_words(&arabic)
+                    .iter()
+                    .map(|w| text::normalize_arabic(w))
+                    .collect();
+                v.surah == a.surah
+                    && v.ayah == a.ayah
+                    && v.arabic == arabic
+                    && v.words == words
+                    && v.word_token_ends.len() == words.len()
+                    && !v.tokens.is_empty()
+                    && v.tokens.iter().all(|t| (1..1024).contains(t))
+                    && v.word_token_ends.first().is_some_and(|n| *n > 0)
+                    && v.word_token_ends.last() == Some(&v.tokens.len())
+                    && v.word_token_ends.windows(2).all(|p| p[0] < p[1])
+                    && v.confusers.iter().all(|i| *i < index.verses.len())
+            })
+    }
     fn numbered_text(&self, a: &SourceAyah) -> String {
         if a.ayah != 1 || a.surah == 1 || a.surah == 9 {
             return a.arabic.clone();
@@ -280,6 +305,14 @@ mod tests {
         assert_eq!(i.verse(97, 1).unwrap().words.len(), 5);
         assert_eq!(i.window(112, 4, 2, 3).unwrap().len(), 5);
         assert!(i.window(112, 0, 0, 0).is_err());
+    }
+    #[test]
+    fn cached_display_cannot_change_tanzil_text() {
+        let source = Corpus::bundled().unwrap();
+        let mut index = (*test_index()).clone();
+        assert!(source.validates_index(&index));
+        index.verses[0].arabic.push('x');
+        assert!(!source.validates_index(&index));
     }
     #[test]
     fn runtime_token_parity() {

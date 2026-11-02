@@ -163,7 +163,7 @@ pub fn load_corpus(path: Option<&Path>) -> Result<Arc<CorpusIndex>> {
     let cached = directory.join(format!("{key}.json"));
     if let Ok(bytes) = fs::read(&cached) {
         if let Ok(index) = serde_json::from_slice::<CorpusIndex>(&bytes) {
-            if index.version == 1 && index.cache_key == key && index.verses.len() == 6236 {
+            if corpus.validates_index(&index) {
                 return Ok(Arc::new(index));
             }
         }
@@ -297,6 +297,101 @@ impl Recognizer {
     pub fn reset(&mut self) {
         self.inner.reset()
     }
+}
+pub struct Spotter {
+    inner: qrk_core::Spotter<OnnxRunner>,
+}
+impl Spotter {
+    pub fn new(
+        model: ModelPack,
+        corpus: Arc<CorpusIndex>,
+        config: qrk_core::SpotConfig,
+    ) -> Result<Self> {
+        Ok(Self {
+            inner: qrk_core::Spotter::with_index(
+                OnnxRunner::new(&model)?,
+                load_spot_index(corpus)?,
+                config,
+            )?,
+        })
+    }
+    pub fn feed(&mut self, pcm: &[f32]) -> Result<Vec<Event>> {
+        self.inner.feed(pcm)
+    }
+    pub fn stop(&mut self) -> Result<Summary> {
+        self.inner.stop()
+    }
+    pub fn reset(&mut self) {
+        self.inner.reset();
+    }
+}
+impl Recognizer {
+    pub fn new_spotting(
+        model: ModelPack,
+        corpus: Arc<CorpusIndex>,
+        config: qrk_core::SpotConfig,
+    ) -> Result<Spotter> {
+        Spotter::new(model, corpus, config)
+    }
+}
+pub fn load_spot_index(corpus: Arc<CorpusIndex>) -> Result<Arc<qrk_core::SpotIndex>> {
+    type Cache = std::collections::HashMap<String, std::sync::Weak<qrk_core::SpotIndex>>;
+    static CACHE: OnceLock<Mutex<Cache>> = OnceLock::new();
+    let shared = CACHE.get_or_init(|| Mutex::new(Cache::new()));
+    if let Some(value) = shared
+        .lock()
+        .map_err(failure)?
+        .get(&corpus.cache_key)
+        .and_then(std::sync::Weak::upgrade)
+    {
+        return Ok(value);
+    }
+    let digest = hex::encode(Sha256::digest(corpus.cache_key.as_bytes()));
+    let directory = cache_directory().join("indices");
+    let path = directory.join(format!("spot-v1-{digest}.json"));
+    let existing = fs::File::open(&path).ok().and_then(|f| {
+        let mut b = Vec::new();
+        f.take(64 * 1024 * 1024 + 1).read_to_end(&mut b).ok()?;
+        qrk_core::SpotIndex::from_cache(corpus.clone(), &b).ok()
+    });
+    let rebuild = existing.is_none();
+    let index = Arc::new(existing.unwrap_or_else(|| qrk_core::SpotIndex::new(corpus.clone())));
+    if rebuild && fs::create_dir_all(&directory).is_ok() {
+        if let Ok(bytes) = index.cache_bytes() {
+            let temp = directory.join(format!(
+                ".spot-{}-{}.tmp",
+                std::process::id(),
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_nanos()
+            ));
+            if fs::write(&temp, bytes).is_ok()
+                && fs::rename(&temp, &path).is_err()
+                && cfg!(windows)
+                && fs::remove_file(&path).is_ok()
+            {
+                // Windows cannot replace a rebuildable cache with rename.
+                let _ = fs::rename(&temp, &path);
+            }
+            let _ = fs::remove_file(temp);
+        }
+    }
+    let mut cache = shared.lock().map_err(failure)?;
+    cache.retain(|_, weak| weak.strong_count() > 0);
+    cache.insert(corpus.cache_key.clone(), Arc::downgrade(&index));
+    Ok(index)
+}
+pub fn match_text(segment: &str) -> Result<qrk_core::TextMatch> {
+    static INDEX: OnceLock<Arc<qrk_core::SpotIndex>> = OnceLock::new();
+    let index = if let Some(index) = INDEX.get() {
+        index.clone()
+    } else {
+        let value = load_spot_index(load_corpus(None)?)?;
+        let _ = INDEX.set(value.clone());
+        value
+    };
+    index.match_text(segment, &qrk_core::SpotConfig::default())
 }
 #[cfg(feature = "dynamic")]
 fn embedded_runtime() -> Result<Option<PathBuf>> {

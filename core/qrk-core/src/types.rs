@@ -102,6 +102,10 @@ pub struct VerseMatch {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Event {
+    QuoteDetected {
+        #[serde(flatten)]
+        quote: crate::spot::QuoteDetected,
+    },
     WordProgress {
         surah: u16,
         ayah: u16,
@@ -130,6 +134,8 @@ pub struct Summary {
     #[serde(rename = "type")]
     pub kind: SummaryType,
     pub verses: Vec<VerseMatch>,
+    #[serde(default)]
+    pub quotes: Vec<crate::spot::QuoteDetected>,
     pub transcript: String,
     pub duration: f64,
     pub events: Vec<Event>,

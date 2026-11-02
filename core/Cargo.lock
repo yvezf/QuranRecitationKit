@@ -1521,7 +1521,7 @@ dependencies = [
 
 [[package]]
 name = "qrk-audio"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "cc",
  "cpal",
@@ -1531,7 +1531,7 @@ dependencies = [
 
 [[package]]
 name = "qrk-cli"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "base64 0.22.1",
  "clap",
@@ -1548,7 +1548,7 @@ dependencies = [
 
 [[package]]
 name = "qrk-core"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "hex",
  "serde",
@@ -1561,7 +1561,7 @@ dependencies = [
 
 [[package]]
 name = "qrk-ffi"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "cbindgen",
  "qrk-core",
@@ -1571,7 +1571,7 @@ dependencies = [
 
 [[package]]
 name = "qrk-onnx"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "directories",
  "hex",

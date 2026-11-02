@@ -32,6 +32,272 @@
           "minimum": 0
         }
       }
+    },
+    "quote_candidate": {
+      "type": "object",
+      "required": [
+        "surah",
+        "ayah_from",
+        "ayah_to",
+        "word_from",
+        "word_to",
+        "confidence",
+        "text_uthmani",
+        "reference"
+      ],
+      "properties": {
+        "surah": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 114
+        },
+        "ayah_from": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "ayah_to": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "word_from": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "word_to": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "text_uthmani": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reference": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "quote": {
+      "type": "object",
+      "required": [
+        "surah",
+        "ayah_from",
+        "ayah_to",
+        "word_from",
+        "word_to",
+        "confidence",
+        "text_uthmani",
+        "reference",
+        "start_seconds",
+        "end_seconds",
+        "verified",
+        "ambiguous",
+        "candidates"
+      ],
+      "properties": {
+        "surah": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 114
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ayah_from": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ayah_to": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "word_from": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "word_to": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "text_uthmani": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reference": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "start_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "end_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "verified": {
+          "type": "boolean"
+        },
+        "ambiguous": {
+          "type": "boolean"
+        },
+        "candidates": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/quote_candidate"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "ambiguous": {
+                "const": true
+              }
+            },
+            "required": [
+              "ambiguous"
+            ]
+          },
+          "then": {
+            "properties": {
+              "verified": {
+                "const": false
+              },
+              "confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 0.5
+              },
+              "candidates": {
+                "minItems": 2
+              },
+              "surah": {
+                "type": "null"
+              },
+              "ayah_from": {
+                "type": "null"
+              },
+              "ayah_to": {
+                "type": "null"
+              },
+              "word_from": {
+                "type": "null"
+              },
+              "word_to": {
+                "type": "null"
+              },
+              "text_uthmani": {
+                "type": "null"
+              },
+              "reference": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "verified": {
+                "const": true
+              },
+              "surah": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 114
+              },
+              "ayah_from": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "ayah_to": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "word_from": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "word_to": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "text_uthmani": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reference": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
     }
   },
   "oneOf": [
@@ -201,6 +467,12 @@
         "dropped_chunks": {
           "type": "integer",
           "minimum": 0
+        },
+        "quotes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/quote"
+          }
         }
       },
       "additionalProperties": false
@@ -217,6 +489,254 @@
         },
         "message": {
           "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "type",
+        "surah",
+        "ayah_from",
+        "ayah_to",
+        "word_from",
+        "word_to",
+        "confidence",
+        "text_uthmani",
+        "reference",
+        "start_seconds",
+        "end_seconds",
+        "verified",
+        "ambiguous",
+        "candidates"
+      ],
+      "properties": {
+        "type": {
+          "const": "quote_detected"
+        },
+        "surah": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 114
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ayah_from": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ayah_to": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "word_from": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "word_to": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "text_uthmani": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reference": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "start_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "end_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "verified": {
+          "type": "boolean"
+        },
+        "ambiguous": {
+          "type": "boolean"
+        },
+        "candidates": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/quote_candidate"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "ambiguous": {
+                "const": true
+              }
+            },
+            "required": [
+              "ambiguous"
+            ]
+          },
+          "then": {
+            "properties": {
+              "verified": {
+                "const": false
+              },
+              "confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 0.5
+              },
+              "candidates": {
+                "minItems": 2
+              },
+              "surah": {
+                "type": "null"
+              },
+              "ayah_from": {
+                "type": "null"
+              },
+              "ayah_to": {
+                "type": "null"
+              },
+              "word_from": {
+                "type": "null"
+              },
+              "word_to": {
+                "type": "null"
+              },
+              "text_uthmani": {
+                "type": "null"
+              },
+              "reference": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "verified": {
+                "const": true
+              },
+              "surah": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 114
+              },
+              "ayah_from": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "ayah_to": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "word_from": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "word_to": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "text_uthmani": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reference": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "object",
+      "required": [
+        "type",
+        "verified",
+        "ambiguous",
+        "candidates"
+      ],
+      "properties": {
+        "type": {
+          "const": "text_match"
+        },
+        "verified": {
+          "const": false
+        },
+        "ambiguous": {
+          "type": "boolean"
+        },
+        "candidates": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/quote_candidate"
+          }
         }
       },
       "additionalProperties": false

@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 use futures_util::{SinkExt, StreamExt};
 use qrk_audio::{AudioResampler, Capture};
-use qrk_core::{Config, Event, Target};
+use qrk_core::{Config, Event, SpotConfig, Summary, Target};
 use qrk_onnx::{load_corpus, ModelPack, Recognizer};
 use serde_json::{json, Value};
 use std::{
@@ -57,6 +57,21 @@ enum Command {
         #[arg(long)]
         seconds: Option<f64>,
     },
+    /// Detect Quran quotations in a WAV file or microphone stream, without a target.
+    Spot {
+        #[arg(long, required_unless_present = "mic", conflicts_with = "mic")]
+        wav: Option<PathBuf>,
+        #[arg(long, required_unless_present = "wav")]
+        mic: bool,
+        #[arg(long, requires = "mic")]
+        device: Option<String>,
+        #[arg(long, requires = "mic")]
+        seconds: Option<f64>,
+        #[arg(long, default_value_t = 8.0)]
+        window_seconds: f64,
+    },
+    /// Model-free transcript candidates, always unverified.
+    MatchText { text: String },
     /// Run the local WebSocket or stdio JSON/PCM sidecar.
     Serve {
         #[arg(long, default_value_t = 7877)]
@@ -89,17 +104,44 @@ fn target(surah: u16, ayahs: Option<&str>) -> AnyResult<Target> {
         Ok(Target::surah(surah))
     }
 }
-fn recognizer(args: &Args) -> AnyResult<Recognizer> {
+enum Engine {
+    Tracking(Recognizer),
+    Spot(qrk_onnx::Spotter),
+}
+impl Engine {
+    fn feed(&mut self, pcm: &[f32]) -> qrk_core::Result<Vec<Event>> {
+        match self {
+            Self::Tracking(r) => Ok(r.feed(pcm)),
+            Self::Spot(r) => r.feed(pcm),
+        }
+    }
+    fn stop(&mut self) -> qrk_core::Result<Summary> {
+        match self {
+            Self::Tracking(r) => r.stop(),
+            Self::Spot(r) => r.stop(),
+        }
+    }
+    fn target(&mut self, target: Target) -> qrk_core::Result<()> {
+        match self {
+            Self::Tracking(r) => r.set_expected(target),
+            Self::Spot(_) => Err(qrk_core::Error::Invalid(
+                "spot mode has no expected target".into(),
+            )),
+        }
+    }
+}
+fn engine(args: &Args, spot: Option<SpotConfig>) -> AnyResult<Engine> {
     let model = if let Some(dir) = &args.model {
         ModelPack::from_directory(dir)?
     } else {
         ModelPack::fetch(None, |_| {})?
     };
-    Ok(Recognizer::new(
-        model,
-        load_corpus(args.corpus.as_deref())?,
-        Config::default(),
-    )?)
+    let corpus = load_corpus(args.corpus.as_deref())?;
+    Ok(if let Some(config) = spot {
+        Engine::Spot(qrk_onnx::Spotter::new(model, corpus, config)?)
+    } else {
+        Engine::Tracking(Recognizer::new(model, corpus, Config::default())?)
+    })
 }
 fn events(events: &[Event], machine: bool) {
     for event in events {
@@ -111,14 +153,31 @@ fn events(events: &[Event], machine: bool) {
     }
     let _ = io::stdout().flush();
 }
-fn wav(args: &Args, surah: u16, ayahs: Option<&str>, file: &Path) -> AnyResult<i32> {
-    let mut engine = recognizer(args)?;
-    let expected = target(surah, ayahs)?;
-    let count = match expected {
-        Target::Ayahs { from, to, .. } => usize::from(to.saturating_sub(from) + 1),
-        _ => engine_corpus_count(args, surah)?,
+fn wav(
+    args: &Args,
+    surah: u16,
+    ayahs: Option<&str>,
+    file: &Path,
+    spot: Option<SpotConfig>,
+) -> AnyResult<i32> {
+    let spotting = spot.is_some();
+    let mut engine = engine(args, spot)?;
+    let expected = if spotting {
+        Target::surah(1)
+    } else {
+        target(surah, ayahs)?
     };
-    engine.set_expected(expected)?;
+    let count = if spotting {
+        0
+    } else {
+        match expected {
+            Target::Ayahs { from, to, .. } => usize::from(to.saturating_sub(from) + 1),
+            _ => engine_corpus_count(args, surah)?,
+        }
+    };
+    if !spotting {
+        engine.target(expected)?;
+    }
     let mut wav = hound::WavReader::open(file)?;
     let format = wav.spec();
     if format.channels == 0 {
@@ -152,22 +211,26 @@ fn wav(args: &Args, surah: u16, ayahs: Option<&str>, file: &Path) -> AnyResult<i
             mono.clear();
             while pending.len() >= 4800 {
                 let chunk: Vec<_> = pending.drain(..4800).collect();
-                events(&engine.feed(&chunk), args.json);
+                events(&engine.feed(&chunk)?, args.json);
             }
         }
     }
     pending.extend(resampler.process(&mono)?);
     pending.extend(resampler.finish()?);
     if !pending.is_empty() {
-        events(&engine.feed(&pending), args.json)
+        events(&engine.feed(&pending)?, args.json)
     }
     let summary = engine.stop()?;
     events(&summary.events, args.json);
     println!(
         "{}",
-        json!({"type":"summary","verses":summary.verses,"transcript":summary.transcript,"duration":summary.duration})
+        json!({"type":"summary","verses":summary.verses,"quotes":summary.quotes,"transcript":summary.transcript,"duration":summary.duration})
     );
-    Ok(if summary.verses.len() == count { 0 } else { 1 })
+    Ok(if spotting || summary.verses.len() == count {
+        0
+    } else {
+        1
+    })
 }
 fn engine_corpus_count(args: &Args, surah: u16) -> AnyResult<usize> {
     Ok(load_corpus(args.corpus.as_deref())?
@@ -182,13 +245,17 @@ async fn mic(
     surah: u16,
     device: Option<&str>,
     seconds: Option<f64>,
+    spot: Option<SpotConfig>,
 ) -> AnyResult<i32> {
     if seconds.is_some_and(|s| !s.is_finite() || s <= 0.) {
         return Err("microphone duration must be finite and positive".into());
     }
     qrk_audio::quiet_device_probe(|| qrk_audio::check_input_device(device))?;
-    let mut engine = recognizer(args)?;
-    engine.set_expected(Target::surah(surah))?;
+    let spotting = spot.is_some();
+    let mut engine = engine(args, spot)?;
+    if !spotting {
+        engine.target(Target::surah(surah))?;
+    }
     let (sender, receiver) = std::sync::mpsc::sync_channel(64);
     let capture = qrk_audio::quiet_device_probe(|| Capture::start(device, sender))?;
     let mut resampler = AudioResampler::new(capture.sample_rate)?;
@@ -225,7 +292,7 @@ async fn mic(
             }
             pending.extend(resampler.process(&chunk)?);
             if pending.len() >= 4800 {
-                events(&engine.feed(&pending), args.json);
+                events(&engine.feed(&pending)?, args.json);
                 pending.clear();
             }
         }
@@ -239,7 +306,7 @@ async fn mic(
     }
     pending.extend(resampler.finish()?);
     if !pending.is_empty() {
-        events(&engine.feed(&pending), args.json)
+        events(&engine.feed(&pending)?, args.json)
     }
     if dropped > 0 {
         eprintln!(
@@ -253,9 +320,13 @@ async fn mic(
     events(&summary.events, args.json);
     println!(
         "{}",
-        json!({"type":"summary","verses":summary.verses,"transcript":summary.transcript,"duration":summary.duration,"dropped_chunks":dropped})
+        json!({"type":"summary","verses":summary.verses,"quotes":summary.quotes,"transcript":summary.transcript,"duration":summary.duration,"dropped_chunks":dropped})
     );
-    Ok(if summary.verses.is_empty() { 1 } else { 0 })
+    Ok(if !spotting && summary.verses.is_empty() {
+        1
+    } else {
+        0
+    })
 }
 struct DownloadProgress {
     tty: bool,
@@ -313,12 +384,35 @@ async fn main() {
                 0
             })
             .map_err(Into::into),
-        Command::Wav { surah, ayahs, file } => wav(&args, *surah, ayahs.as_deref(), file),
+        Command::Wav { surah, ayahs, file } => wav(&args, *surah, ayahs.as_deref(), file, None),
         Command::Mic {
             surah,
             device,
             seconds,
-        } => mic(&args, *surah, device.as_deref(), *seconds).await,
+        } => mic(&args, *surah, device.as_deref(), *seconds, None).await,
+        Command::Spot {
+            wav: file,
+            mic: _,
+            device,
+            seconds,
+            window_seconds,
+        } => {
+            let config = SpotConfig {
+                window_seconds: *window_seconds,
+                ..Default::default()
+            };
+            if let Some(file) = file {
+                wav(&args, 0, None, file, Some(config))
+            } else {
+                mic(&args, 0, device.as_deref(), *seconds, Some(config)).await
+            }
+        }
+        Command::MatchText { text } => qrk_onnx::match_text(text)
+            .map(|r| {
+                println!("{}", serde_json::to_string(&r).unwrap());
+                0
+            })
+            .map_err(Into::into),
         Command::Serve { port, token, stdio } => {
             sidecar::serve(&args, *port, token.as_deref(), *stdio)
                 .await

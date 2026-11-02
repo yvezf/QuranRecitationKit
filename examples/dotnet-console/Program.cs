@@ -37,3 +37,11 @@ if (summary.GetProperty("verses").GetArrayLength() != expected) throw new Except
 Console.WriteLine(summary.GetRawText());
 recognizer.Reset();
 Console.WriteLine("DOTNET PASS");
+
+if (args.Length == 1) {
+    var textMatch=QuotationMatcher.MatchText("الذين آمنوا");
+    if(textMatch.GetProperty("verified").GetBoolean() || textMatch.GetProperty("candidates").GetArrayLength()<2)throw new Exception("Model-free match must remain unverified");
+    using var spotter=new RecitationSpotter(args[0]);spotter.Feed(new float[32000]);
+    if(spotter.Stop().GetProperty("quotes").GetArrayLength()!=0)throw new Exception("Silence must not be a quote");
+    spotter.Reset();Console.WriteLine("DOTNET SPOT / TEXT PASS");
+}

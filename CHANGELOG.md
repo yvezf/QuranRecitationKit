@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0
+
+- Add independent open-set quotation sessions for lecture/note-taking apps: runtime retrieval, scoped CTC verification, timed verbatim Tanzil spans, explicit ambiguity and overlapping-window merge/debounce.
+- Add model-free text candidates, always unverified, in Rust/C, CLI/sidecar, Swift, Node, Python and .NET; include lecture/notes integration examples.
+- Preserve tracking behavior and the existing Swift tracking-event enum. Spotting uses the same pinned model-v2; no new weights or recording data ship in the SDK.
+- Validate runtime display/shingle caches against the corpus and publish frame/time, ambiguity, pronunciation, synthetic-stream and private owned-clip gates. Classroom precision/recall remains unmeasured.
+- Stage ABI-changing release artifacts before publishing a version tag; verify the exact public Swift archive after pinning.
+
+
 ## [0.2.1] — 2026-11-01
 
 - Fixed continuous multi-ayah recognition: anchored positional alignment, real fresh-observation evidence, ayah-boundary confirmation, bounded backtrack and ordered per-ayah terminal scoring. A completed earlier ayah survives continuing speech.

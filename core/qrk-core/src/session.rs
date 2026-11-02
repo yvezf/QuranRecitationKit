@@ -706,6 +706,7 @@ impl<M: AcousticModel> Recognizer<M> {
         Ok(Summary {
             kind: crate::types::SummaryType::Summary,
             verses: self.verses.clone(),
+            quotes: vec![],
             transcript: if self.accepted.is_empty() {
                 self.transcript.clone()
             } else {

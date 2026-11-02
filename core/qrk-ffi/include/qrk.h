@@ -8,6 +8,11 @@
 
 typedef struct QrkRecognizer QrkRecognizer;
 
+/**
+ * Independent open-set session. Destroy with qrk_spotter_free, not qrk_free.
+ */
+typedef struct QrkSpotter QrkSpotter;
+
 typedef int32_t qrk_status;
 
 typedef void (*qrk_event_cb)(const char *json, void *user);
@@ -101,7 +106,7 @@ void qrk_free(struct QrkRecognizer *h);
 
 /**
  * # Safety
- * s is null or an owned string returned by qrk_stop, freed exactly once.
+ * s is null or an owned string returned by this ABI, freed exactly once; never a borrowed version/error pointer.
  */
 void qrk_string_free(char *s);
 
@@ -111,6 +116,51 @@ void qrk_string_free(char *s);
  * cache_dir is null or NUL-terminated UTF-8; callback/context remain valid through the call.
  */
 qrk_status qrk_model_fetch(const char *cache_dir, qrk_progress_cb callback, void *user);
+
+/**
+ * # Safety
+ * Strings are null or NUL-terminated UTF-8; out is writable pointer storage.
+ */
+qrk_status qrk_spotter_new(const char *model_dir,
+                           const char *corpus_path,
+                           const char *config_json,
+                           struct QrkSpotter **out);
+
+/**
+ * Callbacks borrow UTF-8 and run after releasing the session lock.
+ * # Safety
+ * h is live; pcm has n samples (null only for zero); callback/context stay valid. Do not free concurrently.
+ */
+qrk_status qrk_spotter_feed(struct QrkSpotter *h,
+                            const float *pcm,
+                            uintptr_t n,
+                            qrk_event_cb callback,
+                            void *user);
+
+/**
+ * # Safety
+ * h is live; out is writable pointer storage. Free returned JSON with qrk_string_free.
+ */
+qrk_status qrk_spotter_stop(struct QrkSpotter *h, char **out);
+
+/**
+ * # Safety
+ * h is a live spotter, not concurrently freed.
+ */
+qrk_status qrk_spotter_reset(struct QrkSpotter *h);
+
+/**
+ * # Safety
+ * h is null or a live spotter returned by qrk_spotter_new; free once after all calls finish.
+ */
+void qrk_spotter_free(struct QrkSpotter *h);
+
+/**
+ * Model-free retrieval. Result is ALWAYS verified:false; no acoustic model is loaded/downloaded.
+ * # Safety
+ * text is NUL-terminated UTF-8; out is writable. Free returned JSON with qrk_string_free.
+ */
+qrk_status qrk_match_text(const char *text, char **out);
 
 #ifdef __cplusplus
 }  // extern "C"

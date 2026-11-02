@@ -23,6 +23,8 @@ for target,variant,arch in slices:
     location=work/target;location.mkdir(exist_ok=True)
     subprocess.run(['lipo',str(framework/variant/'onnxruntime.framework/onnxruntime'),'-thin',arch,'-output',str(location/'libonnxruntime.a')],check=True)
     env=dict(os.environ,ORT_LIB_LOCATION=str(location),DEVELOPER_DIR='/Applications/Xcode.app/Contents/Developer',MACOSX_DEPLOYMENT_TARGET='14.0',IPHONEOS_DEPLOYMENT_TARGET='16.0')
+    sdk='iphonesimulator' if target in ('aarch64-apple-ios-sim','x86_64-apple-ios') else 'iphoneos' if target=='aarch64-apple-ios' else 'macosx'
+    env['SDKROOT']=subprocess.check_output(['xcrun','--sdk',sdk,'--show-sdk-path'],text=True).strip()
     env.pop('QRK_EMBED_RUNTIME',None);env.pop('ORT_DYLIB_PATH',None)
     subprocess.run(['cargo','+stable','build','--manifest-path',str(ROOT/'core/Cargo.toml'),'-p','qrk-ffi','--no-default-features','--target',target,'--release','--locked'],env=env,check=True)
 out=ROOT/'bindings/swift/Artifacts/QRKFFI.xcframework'

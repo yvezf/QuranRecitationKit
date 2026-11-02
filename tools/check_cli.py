@@ -14,7 +14,7 @@ if sys.platform.startswith('linux'):
     with tempfile.TemporaryDirectory(prefix='qrk-no-input-') as temporary:
         config=Path(temporary)/'alsa.conf';config.write_text('')
         env=dict(os.environ,ALSA_CONFIG_PATH=str(config))
-        for args in [['devices'],['mic','--surah','78','--seconds','1']]:
+        for args in [['devices'],['mic','--surah','78','--seconds','1'],['spot','--mic','--seconds','1']]:
             result=subprocess.run([str(binary),*args],capture_output=True,text=True,env=env,timeout=30)
             assert result.returncode!=0,(args,result.stdout,result.stderr)
             lines=result.stderr.strip().splitlines()

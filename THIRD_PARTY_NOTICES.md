@@ -81,3 +81,12 @@ No recitation recording, PCM, spectrogram, embedding, private rights manifest or
 For Intel macOS desktop distributions, ONNX Runtime 1.24.2 is linked into a C-API shared library from Microsoft’s checksum-pinned Apple static archive because its PyPI wheel is unavailable for that architecture. Runtime/model sources and weights are unchanged. Build provenance is included in native release archives.
 
 Linux audio capture dynamically uses the host-provided [ALSA library](https://github.com/alsa-project/alsa-lib), LGPL-2.1-or-later. ALSA is not embedded in the release archives. The small MIT CLI probe shim uses its thread-local error-handler API and restores the prior handler after enumeration/setup; it does not redirect global stderr or replace system libraries.
+
+
+## Open-set spotting additions (0.3.0)
+
+Spot mode adapts the MIT-pinned Tilawa retrieval-then-CTC-rerank design: [`quran-db.ts`](https://github.com/yazinsai/tilawa/blob/ec5cdc72c1c48ba29866ca2e3197d6b9a0e2e793/packages/core/src/quran-db.ts), candidate retrieval/span expansion, and [`ctc-rescore.ts`](https://github.com/yazinsai/tilawa/blob/ec5cdc72c1c48ba29866ca2e3197d6b9a0e2e793/packages/core/src/ctc-rescore.ts), `scoreCtcCandidates` / `chooseLongestStablePrefix`. The runtime word-shingle index, time/debounce integration and language bindings are new adaptations; this does not import later NPL models, phoneme corpora or vocabulary. The existing MIT attribution and license copy remain applicable.
+
+Quoted display spans are unchanged slices of the attributed Tanzil source. Multi-ayah spans join the original slices with LF separators; matching normalization and pronunciation alternatives never rewrite display text. Runtime matching/shingle caches stay on the user's machine, outside distributions.
+
+The CI-only JSON Schema validator [`jsonschema` 4.23.0](https://github.com/python-jsonschema/jsonschema/tree/v4.23.0) is MIT-licensed and installed separately. It and its Python dependencies are test tools, not bundled SDK runtime code. The same distinction applies to temporary speech-synthesis evaluations: no voice recording is distributed.

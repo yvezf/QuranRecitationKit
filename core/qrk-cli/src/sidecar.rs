@@ -9,7 +9,7 @@ use tokio_tungstenite::{
     },
 };
 struct Session {
-    engine: Option<Recognizer>,
+    engine: Option<Engine>,
     resampler: Option<AudioResampler>,
     format: String,
     model: Option<PathBuf>,
@@ -28,6 +28,13 @@ impl Session {
     fn json(&mut self, message: &str) -> AnyResult<Vec<Value>> {
         let value: Value = serde_json::from_str(message)?;
         match value["type"].as_str() {
+            Some("match_text") => {
+                let result =
+                    qrk_onnx::match_text(value["text"].as_str().ok_or("text must be a string")?)?;
+                let mut result = serde_json::to_value(result)?;
+                result["type"] = json!("text_match");
+                Ok(vec![result])
+            }
             Some("start") => {
                 if self.engine.is_some() {
                     return Err("session is already started".into());
@@ -45,15 +52,27 @@ impl Session {
                 } else {
                     ModelPack::fetch(None, |_| {})?
                 };
-                let mut engine = Recognizer::new(
-                    model,
-                    load_corpus(self.corpus.as_deref())?,
-                    Config::default(),
-                )?;
-                engine.set_expected(Target::from_json(&value["target"].to_string())?)?;
+                let mode = value["mode"].as_str().unwrap_or("track");
+                let corpus = load_corpus(self.corpus.as_deref())?;
+                let mut engine = match mode {
+                    "track" => {
+                        let mut r = Recognizer::new(model, corpus, Config::default())?;
+                        r.set_expected(Target::from_json(&value["target"].to_string())?)?;
+                        Engine::Tracking(r)
+                    }
+                    "spot" => {
+                        let config = if value.get("configuration").is_some() {
+                            serde_json::from_value::<SpotConfig>(value["configuration"].clone())?
+                        } else {
+                            SpotConfig::default()
+                        };
+                        Engine::Spot(qrk_onnx::Spotter::new(model, corpus, config)?)
+                    }
+                    _ => return Err("mode must be track or spot".into()),
+                };
                 self.resampler = Some(AudioResampler::new(rate as u32)?);
                 self.format = format.into();
-                let initial = engine.feed(&[]);
+                let initial = engine.feed(&[])?;
                 self.engine = Some(engine);
                 Ok(initial
                     .iter()
@@ -70,7 +89,7 @@ impl Session {
                 let mut engine = self.engine.take().ok_or("session has not started")?;
                 let tail = self.resampler.take().unwrap().finish()?;
                 let mut values: Vec<Value> = engine
-                    .feed(&tail)
+                    .feed(&tail)?
                     .iter()
                     .map(|e| serde_json::to_value(e).unwrap())
                     .collect();
@@ -81,7 +100,7 @@ impl Session {
                         .iter()
                         .map(|e| serde_json::to_value(e).unwrap()),
                 );
-                values.push(json!({"type":"summary","verses":summary.verses,"transcript":summary.transcript,"duration":summary.duration}));
+                values.push(json!({"type":"summary","verses":summary.verses,"quotes":summary.quotes,"transcript":summary.transcript,"duration":summary.duration}));
                 Ok(values)
             }
             Some("reset") => {
@@ -121,7 +140,7 @@ impl Session {
         }
         let converted = self.resampler.as_mut().unwrap().process(&pcm)?;
         Ok(engine
-            .feed(&converted)
+            .feed(&converted)?
             .iter()
             .map(|e| serde_json::to_value(e).unwrap())
             .collect())

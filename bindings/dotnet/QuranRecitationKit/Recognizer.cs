@@ -76,6 +76,53 @@ namespace QuranRecitationKit
         private void Dispatch(IEnumerable<JsonElement> events) { dispatching = true; try { foreach (var e in events) Event?.Invoke(e); } finally { dispatching = false; } }
         private static JsonElement Parse(string text) { using (var doc = JsonDocument.Parse(text)) return doc.RootElement.Clone(); }
     }
+    public sealed class RecitationSpotter : IDisposable
+    {
+        private readonly NativeHandle handle;
+        private readonly object gate = new object();
+        private bool dispatching;
+        /// <summary>Borrowed native data is copied before dispatch. JsonElement remains usable after the callback.</summary>
+        public event Action<JsonElement>? Event;
+        public RecitationSpotter(string modelDirectory, SpotConfiguration? configuration = null)
+        {
+            Native.Check(Native.qrk_spotter_new(modelDirectory, IntPtr.Zero, JsonSerializer.Serialize(configuration ?? new SpotConfiguration()), out var pointer));
+            handle = new NativeHandle(pointer,true);
+        }
+        public static string Version => Native.Read(Native.qrk_version());
+        private void Guard()
+        {
+            if (handle.IsClosed) throw new ObjectDisposedException(nameof(RecitationSpotter));
+            if (dispatching) throw new InvalidOperationException("Do not mutate or dispose this recognizer inside an event callback.");
+        }
+        public static JsonElement MatchText(string text) => QuotationMatcher.MatchText(text);
+        public IReadOnlyList<JsonElement> Feed(float[] pcm16k)
+        {
+            if (pcm16k == null) throw new ArgumentNullException(nameof(pcm16k));
+            if (pcm16k.Length > 960000) throw new ArgumentException("At most 60 seconds per feed.", nameof(pcm16k));
+            lock (gate)
+            {
+                Guard(); var events = new List<JsonElement>(); Exception? failure = null;
+                Native.EventCallback callback = (pointer, context) => { try { events.Add(Parse(Native.Read(pointer))); } catch (Exception e) { failure = e; } };
+                Native.Check(Native.qrk_spotter_feed(handle, pcm16k, (UIntPtr)pcm16k.Length, callback, IntPtr.Zero));
+                GC.KeepAlive(callback); if (failure != null) throw failure;
+                Dispatch(events); return events;
+            }
+        }
+        public JsonElement Stop()
+        {
+            lock (gate)
+            {
+                Guard(); Native.Check(Native.qrk_spotter_stop(handle, out var pointer));
+                JsonElement summary; try { summary = Parse(Native.Read(pointer)); } finally { Native.qrk_string_free(pointer); }
+                var events = new List<JsonElement>(); foreach (var e in summary.GetProperty("events").EnumerateArray()) events.Add(e.Clone());
+                Dispatch(events); return summary;
+            }
+        }
+        public void Reset() { lock (gate) { Guard(); Native.Check(Native.qrk_spotter_reset(handle)); } }
+        public void Dispose() { lock (gate) { if (handle.IsClosed) return; Guard(); handle.Dispose(); } }
+        private void Dispatch(IEnumerable<JsonElement> events) { dispatching = true; try { foreach (var e in events) Event?.Invoke(e); } finally { dispatching = false; } }
+        private static JsonElement Parse(string text) { using (var doc = JsonDocument.Parse(text)) return doc.RootElement.Clone(); }
+    }
     public static class ModelPack
     {
         /// <summary>Blocking, verified download. The release owner must be configured by the publisher.</summary>
@@ -105,10 +152,29 @@ namespace QuranRecitationKit
             finally { Native.qrk_string_free(sourcePointer); }
         }
     }
+    public sealed class SpotConfiguration {
+        [JsonPropertyName("window_seconds")] public double WindowSeconds {get;set;}=8;
+        [JsonPropertyName("min_words")] public int MinimumWords {get;set;}=3;
+        [JsonPropertyName("min_seconds")] public double MinimumSeconds {get;set;}=1.5;
+        [JsonPropertyName("min_margin")] public double MinimumMargin {get;set;}=0.035;
+        [JsonPropertyName("high_margin")] public double HighMargin {get;set;}=0.20;
+        [JsonPropertyName("ambiguity_margin")] public double AmbiguityMargin {get;set;}=0.05;
+        [JsonPropertyName("max_candidates")] public int MaximumCandidates {get;set;}=8;
+    }
+    public static class QuotationMatcher {
+        /// <summary>Model-free, always unverified; results are candidates, never automatic replacements.</summary>
+        public static JsonElement MatchText(string text) {
+            if(text==null)throw new ArgumentNullException(nameof(text));
+            Native.Check(Native.qrk_match_text(text,out var pointer));
+            try {using(var doc=JsonDocument.Parse(Native.Read(pointer)))return doc.RootElement.Clone();}
+            finally {Native.qrk_string_free(pointer);}
+        }
+    }
     internal sealed class NativeHandle : SafeHandleZeroOrMinusOneIsInvalid
     {
-        internal NativeHandle(IntPtr pointer) : base(true) { SetHandle(pointer); }
-        protected override bool ReleaseHandle() { Native.qrk_free(handle); return true; }
+        private readonly bool spotting;
+        internal NativeHandle(IntPtr pointer,bool spotting=false) : base(true) {this.spotting=spotting; SetHandle(pointer); }
+        protected override bool ReleaseHandle() { if(spotting)Native.qrk_spotter_free(handle);else Native.qrk_free(handle); return true; }
     }
     internal sealed class Utf8Marshaller : ICustomMarshaler
     {
@@ -129,6 +195,12 @@ namespace QuranRecitationKit
         private const string Library = "qrk";
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate void EventCallback(IntPtr json, IntPtr user);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate void ProgressCallback(double value, IntPtr user);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern int qrk_spotter_new([MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(Utf8Marshaller))] string model, IntPtr corpus, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(Utf8Marshaller))] string config, out IntPtr handle);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern int qrk_spotter_feed(NativeHandle h, [In] float[] samples, UIntPtr count, EventCallback callback, IntPtr user);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern int qrk_spotter_stop(NativeHandle h,out IntPtr result);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern int qrk_spotter_reset(NativeHandle h);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void qrk_spotter_free(IntPtr h);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern int qrk_match_text([MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(Utf8Marshaller))] string text,out IntPtr result);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr qrk_version();
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr qrk_last_error();
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern int qrk_recognizer_new([MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(Utf8Marshaller))] string model, IntPtr corpus, [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(Utf8Marshaller))] string config, out IntPtr handle);

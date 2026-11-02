@@ -239,7 +239,7 @@ pub unsafe extern "C" fn qrk_free(h: *mut QrkRecognizer) {
     }
 }
 /// # Safety
-/// s is null or an owned string returned by qrk_stop, freed exactly once.
+/// s is null or an owned string returned by this ABI, freed exactly once; never a borrowed version/error pointer.
 #[no_mangle]
 pub unsafe extern "C" fn qrk_string_free(s: *mut c_char) {
     if !s.is_null() {
@@ -300,6 +300,195 @@ mod tests {
             );
             qrk_free(std::ptr::null_mut());
             qrk_string_free(std::ptr::null_mut());
+        }
+    }
+}
+
+/// Independent open-set session. Destroy with qrk_spotter_free, not qrk_free.
+pub struct QrkSpotter {
+    inner: Mutex<qrk_onnx::Spotter>,
+}
+/// # Safety
+/// Strings are null or NUL-terminated UTF-8; out is writable pointer storage.
+#[no_mangle]
+pub unsafe extern "C" fn qrk_spotter_new(
+    model_dir: *const c_char,
+    corpus_path: *const c_char,
+    config_json: *const c_char,
+    out: *mut *mut QrkSpotter,
+) -> qrk_status {
+    status(|| {
+        if out.is_null() {
+            return Err(Error::Invalid("null output handle".into()));
+        }
+        *out = std::ptr::null_mut();
+        let config = optional(config_json)?
+            .filter(|s| !s.is_empty())
+            .map(serde_json::from_str::<qrk_core::SpotConfig>)
+            .transpose()
+            .map_err(|e| Error::Invalid(e.to_string()))?
+            .unwrap_or_default();
+        let inner = qrk_onnx::Spotter::new(
+            ModelPack::from_directory(required(model_dir)?)?,
+            load_corpus(optional(corpus_path)?.map(Path::new))?,
+            config,
+        )?;
+        *out = Box::into_raw(Box::new(QrkSpotter {
+            inner: Mutex::new(inner),
+        }));
+        Ok(())
+    })
+}
+/// Callbacks borrow UTF-8 and run after releasing the session lock.
+/// # Safety
+/// h is live; pcm has n samples (null only for zero); callback/context stay valid. Do not free concurrently.
+#[no_mangle]
+pub unsafe extern "C" fn qrk_spotter_feed(
+    h: *mut QrkSpotter,
+    pcm: *const f32,
+    n: usize,
+    callback: qrk_event_cb,
+    user: *mut c_void,
+) -> qrk_status {
+    status(|| {
+        let h = h
+            .as_ref()
+            .ok_or_else(|| Error::Invalid("null spotter".into()))?;
+        if (pcm.is_null() && n != 0) || n > 960_000 {
+            return Err(Error::Invalid("invalid PCM pointer/count".into()));
+        }
+        let samples = if n == 0 {
+            &[]
+        } else {
+            std::slice::from_raw_parts(pcm, n)
+        };
+        let events = h
+            .inner
+            .lock()
+            .map_err(|_| Error::Model("spotter lock poisoned".into()))?
+            .feed(samples)?;
+        if let Some(callback) = callback {
+            for e in events {
+                let text = CString::new(
+                    serde_json::to_string(&e).map_err(|e| Error::Invalid(e.to_string()))?,
+                )
+                .unwrap();
+                callback(text.as_ptr(), user);
+            }
+        }
+        Ok(())
+    })
+}
+/// # Safety
+/// h is live; out is writable pointer storage. Free returned JSON with qrk_string_free.
+#[no_mangle]
+pub unsafe extern "C" fn qrk_spotter_stop(h: *mut QrkSpotter, out: *mut *mut c_char) -> qrk_status {
+    status(|| {
+        if out.is_null() {
+            return Err(Error::Invalid("null summary pointer".into()));
+        }
+        *out = std::ptr::null_mut();
+        let h = h
+            .as_ref()
+            .ok_or_else(|| Error::Invalid("null spotter".into()))?;
+        let result = h
+            .inner
+            .lock()
+            .map_err(|_| Error::Model("spotter lock poisoned".into()))?
+            .stop()?;
+        *out = CString::new(
+            serde_json::to_string(&result).map_err(|e| Error::Invalid(e.to_string()))?,
+        )
+        .unwrap()
+        .into_raw();
+        Ok(())
+    })
+}
+/// # Safety
+/// h is a live spotter, not concurrently freed.
+#[no_mangle]
+pub unsafe extern "C" fn qrk_spotter_reset(h: *mut QrkSpotter) -> qrk_status {
+    status(|| {
+        let h = h
+            .as_ref()
+            .ok_or_else(|| Error::Invalid("null spotter".into()))?;
+        h.inner
+            .lock()
+            .map_err(|_| Error::Model("spotter lock poisoned".into()))?
+            .reset();
+        Ok(())
+    })
+}
+/// # Safety
+/// h is null or a live spotter returned by qrk_spotter_new; free once after all calls finish.
+#[no_mangle]
+pub unsafe extern "C" fn qrk_spotter_free(h: *mut QrkSpotter) {
+    if !h.is_null() {
+        drop(Box::from_raw(h));
+    }
+}
+/// Model-free retrieval. Result is ALWAYS verified:false; no acoustic model is loaded/downloaded.
+/// # Safety
+/// text is NUL-terminated UTF-8; out is writable. Free returned JSON with qrk_string_free.
+#[no_mangle]
+pub unsafe extern "C" fn qrk_match_text(text: *const c_char, out: *mut *mut c_char) -> qrk_status {
+    status(|| {
+        if out.is_null() {
+            return Err(Error::Invalid("null result pointer".into()));
+        }
+        *out = std::ptr::null_mut();
+        let result = qrk_onnx::match_text(required(text)?)?;
+        *out = CString::new(
+            serde_json::to_string(&result).map_err(|e| Error::Invalid(e.to_string()))?,
+        )
+        .unwrap()
+        .into_raw();
+        Ok(())
+    })
+}
+
+#[cfg(test)]
+mod spot_tests {
+    use super::*;
+    #[test]
+    fn model_free_ffi_has_no_selected_verdict_and_owns_its_result() {
+        unsafe {
+            let text = CString::new("الذين آمنوا").unwrap();
+            let mut out = std::ptr::null_mut();
+            assert_eq!(qrk_match_text(text.as_ptr(), &mut out), QRK_OK);
+            let result: serde_json::Value =
+                serde_json::from_str(CStr::from_ptr(out).to_str().unwrap()).unwrap();
+            qrk_string_free(out);
+            assert_eq!(result["verified"], false);
+            assert_eq!(result["ambiguous"], true);
+            assert!(result["candidates"].as_array().unwrap().len() >= 2);
+            assert_eq!(
+                qrk_match_text(std::ptr::null(), &mut out),
+                QRK_INVALID_ARGUMENT
+            );
+            assert!(out.is_null());
+        }
+    }
+    #[test]
+    fn null_spotter_contract_is_checked() {
+        unsafe {
+            let mut out = std::ptr::null_mut();
+            assert_eq!(
+                qrk_spotter_stop(std::ptr::null_mut(), &mut out),
+                QRK_INVALID_ARGUMENT
+            );
+            assert!(out.is_null());
+            assert_eq!(
+                qrk_spotter_feed(
+                    std::ptr::null_mut(),
+                    std::ptr::null(),
+                    0,
+                    None,
+                    std::ptr::null_mut()
+                ),
+                QRK_INVALID_ARGUMENT
+            );
+            qrk_spotter_free(std::ptr::null_mut());
         }
     }
 }

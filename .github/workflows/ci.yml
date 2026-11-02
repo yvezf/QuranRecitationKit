@@ -46,6 +46,8 @@ jobs:
       - run: cargo build --manifest-path core/Cargo.toml --workspace --release --locked
       - run: python tools/check_cli.py
       - run: python tools/ci_model.py
+      - run: pip install jsonschema==4.23.0
+      - run: python tools/check_spot.py
       - run: cargo test --manifest-path core/Cargo.toml --workspace --locked
       - run: cargo run --manifest-path core/Cargo.toml -p qrk-cli --release -- selftest
       - run: npm --prefix bindings/node ci --ignore-scripts
@@ -65,6 +67,7 @@ jobs:
           dotnet run --project examples/dotnet-console/RecitationDemo.csproj -c Release --no-build -- "$QRK_MODEL_DIR"
   swift:
     runs-on: macos-15
+    env: {DEVELOPER_DIR: "/Applications/Xcode.app/Contents/Developer"}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
