@@ -30,7 +30,7 @@ The Windows cross-check used Rust LLVM tools and the SDK managed by cargo-xwin. 
 
 ## Real recording comparison
 
-The owner's file named `a privately held recording` contains **78:1**, not Fatiha 1:1. It remains outside this repository. Both recognizers matched the actual verse:
+A privately held recording contains **78:1**, not Fatiha 1:1. It remains outside this repository. Both recognizers matched the actual verse:
 
 ```text
 Rust: verse_match surah=78 ayah=1 confidence=0.801431 duration_seconds=5.40

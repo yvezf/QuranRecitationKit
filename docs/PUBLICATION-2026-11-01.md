@@ -1,6 +1,6 @@
 # Publication verification — 2026-11-01
 
-maintainer approved publication. Only this repository was pushed. The source application's checkouts stayed read-only.
+Publication passed maintainer review. Only this repository was pushed. The source application's checkouts stayed read-only.
 
 ## Published
 
