@@ -5,6 +5,7 @@
 - Recover an acoustically verified preceding ayah from a unique spotting seed, and merge verified canonical neighbors within the existing silence boundary.
 - Scope short-ayah CTC scoring to spoken-letter frames so punctuation tails do not dilute confidence in longer windows; retain existing acceptance/ambiguity thresholds.
 - Add controlled posterior and streaming regressions, a negative prefix guard and measured before/after receipts.
+- Preserve closed common-phrase ambiguity across later overlapping windows instead of allowing a provisional alternative to become a primary citation.
 - Include the source cache/dependency hardening, grouped weekly dependency reviews and the tested CLI base64 update. Published 0.3.0 binaries remain unchanged; the larger lecture benchmark is still unmeasured.
 
 ## 0.3.0

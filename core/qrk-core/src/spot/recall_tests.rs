@@ -441,3 +441,90 @@ fn verified_adjacent_ayahs_merge_only_inside_the_existing_silence_boundary() {
         }
     }
 }
+
+#[test]
+fn closed_basmala_stays_ambiguous_when_a_later_unique_quote_arrives() {
+    let corpus = crate::corpus::test_index();
+    let mut false_positives = Vec::new();
+    for window in [8, 12] {
+        let mut logits = vec![-12.; 275 * 1025];
+        for row in logits.chunks_mut(1025) {
+            row[1024] = -0.001;
+        }
+        let mut at = 25;
+        for (surah, ayah, hold) in [(1, 1, 4), (78, 2, 6)] {
+            for &id in &corpus.verse(surah, ayah).unwrap().tokens {
+                for _ in 0..hold {
+                    let row = &mut logits[at * 1025..(at + 1) * 1025];
+                    row.fill(-12.);
+                    row[id as usize] = -0.001;
+                    at += 1;
+                }
+                at += 1;
+            }
+            at += 17;
+        }
+        normalize_fixture_rows(&mut logits);
+        let pcm: Vec<_> = (0..275 * 1280)
+            .map(|n| {
+                let row = &logits[(n / 1280) * 1025..(n / 1280 + 1) * 1025];
+                let voiced = row
+                    .iter()
+                    .enumerate()
+                    .max_by(|a, b| a.1.total_cmp(b.1))
+                    .unwrap()
+                    .0
+                    != 1024;
+                n as f32 / 1e8 + if voiced { 0.1 } else { 0. }
+            })
+            .collect();
+        let mut spot = Spotter::new(
+            ReplayWindow { logits },
+            corpus.clone(),
+            SpotConfig {
+                window_seconds: window as f64,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let mut events = vec![];
+        for chunk in pcm.chunks(4800) {
+            events.extend(spot.feed(chunk).unwrap());
+        }
+        let summary = spot.stop().unwrap();
+        events.extend(summary.events);
+        let quote_events: Vec<_> = events
+            .into_iter()
+            .filter_map(|e| {
+                if let Event::QuoteDetected { quote } = e {
+                    Some(quote)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        let fp = quote_events
+            .iter()
+            .filter(|q| {
+                q.verified
+                    && (q.surah != Some(78) || q.ayah_from != Some(2) || q.ayah_to != Some(2))
+            })
+            .count();
+        let matched = usize::from(quote_events.iter().any(|q| fully_covers(q, &corpus, 78, 2)));
+        receipt(
+            "closed_ambiguity_with_later_seed",
+            window,
+            matched,
+            1,
+            fp,
+            &quote_events,
+        );
+        false_positives.push(fp);
+        assert_eq!(matched, 1, "{quote_events:?}");
+        assert!(quote_events
+            .iter()
+            .any(|q| q.ambiguous && !q.verified && q.surah.is_none()));
+        assert_eq!(summary.quotes, quote_events);
+    }
+    assert_eq!(false_positives, vec![0, 0]);
+}

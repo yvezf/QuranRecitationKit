@@ -25,6 +25,28 @@
       "after_events": 1
     },
     {
+      "case": "closed_ambiguity_with_later_seed",
+      "window_seconds": 8,
+      "expected": 1,
+      "before_matched": 1,
+      "after_matched": 1,
+      "before_false_positives": 1,
+      "after_false_positives": 0,
+      "before_events": 3,
+      "after_events": 2
+    },
+    {
+      "case": "closed_ambiguity_with_later_seed",
+      "window_seconds": 12,
+      "expected": 1,
+      "before_matched": 1,
+      "after_matched": 1,
+      "before_false_positives": 1,
+      "after_false_positives": 0,
+      "before_events": 3,
+      "after_events": 2
+    },
+    {
       "case": "inaudible_prefix",
       "window_seconds": 8,
       "expected": 1,

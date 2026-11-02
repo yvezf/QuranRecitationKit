@@ -1049,6 +1049,31 @@ impl<M: AcousticModel> Spotter<M> {
             ambiguous,
             candidates,
         };
+        // A closed ambiguous phrase is not new lexical evidence. In particular,
+        // changing the candidate shortlist must not turn the same basmala audio
+        // into a selected primary citation in a later overlapping window.
+        if let Some(display) = &quote.text_uthmani {
+            let words: Vec<_> = text::semantic_words(display)
+                .iter()
+                .map(|s| key(s))
+                .collect();
+            if !words.is_empty()
+                && self.quotes.iter().any(|closed| {
+                    closed.ambiguous
+                        && temporal_overlap(closed, &quote)
+                        && closed.candidates.iter().any(|candidate| {
+                            let old: Vec<_> = text::semantic_words(&candidate.text_uthmani)
+                                .iter()
+                                .map(|s| key(s))
+                                .collect();
+                            old.len() >= words.len()
+                                && old.windows(words.len()).any(|part| part == words)
+                        })
+                })
+            {
+                return;
+            }
+        }
         if self.quotes.iter().any(|q| {
             q.surah == quote.surah
                 && q.ayah_from == quote.ayah_from
@@ -1142,11 +1167,16 @@ impl<M: AcousticModel> Spotter<M> {
     }
     fn close(&mut self) {
         if let Some(open) = self.open.take() {
-            self.closed_spans.push((
-                open.span.clone(),
-                open.quote.start_seconds,
-                open.quote.end_seconds,
-            ));
+            // Ambiguity has no selected canonical span. Masking its provisional
+            // winner would remove just one alternative from subsequent windows
+            // and incorrectly make the other alternative appear unique.
+            if open.quote.verified {
+                self.closed_spans.push((
+                    open.span.clone(),
+                    open.quote.start_seconds,
+                    open.quote.end_seconds,
+                ));
+            }
             self.pending.push(Event::QuoteDetected {
                 quote: open.quote.clone(),
             });
