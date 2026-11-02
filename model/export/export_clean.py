@@ -6,6 +6,8 @@ A failed Torch/NeMo export is a failed candidate, not permission to substitute a
 """
 import argparse, gc, hashlib, json, subprocess, sys
 from pathlib import Path
+from prepare_environment import prepare
+prepare()
 import torch
 import onnx
 from nemo.collections.asr.models import EncDecHybridRNNTCTCBPEModel

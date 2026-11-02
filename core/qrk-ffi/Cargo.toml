@@ -11,8 +11,8 @@ crate-type = ["cdylib", "staticlib", "rlib"]
 default = ["dynamic"]
 dynamic = ["qrk-onnx/dynamic"]
 [dependencies]
-qrk-core = { path = "../qrk-core" }
-qrk-onnx = { path = "../qrk-onnx", default-features = false }
+qrk-core = { version = "0.3", path = "../qrk-core" }
+qrk-onnx = { version = "0.3", path = "../qrk-onnx", default-features = false }
 serde_json.workspace = true
 [build-dependencies]
 cbindgen = "0.29"

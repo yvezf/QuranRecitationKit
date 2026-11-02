@@ -90,3 +90,7 @@ Spot mode adapts the MIT-pinned Tilawa retrieval-then-CTC-rerank design: [`quran
 Quoted display spans are unchanged slices of the attributed Tanzil source. Multi-ayah spans join the original slices with LF separators; matching normalization and pronunciation alternatives never rewrite display text. Runtime matching/shingle caches stay on the user's machine, outside distributions.
 
 The CI-only JSON Schema validator [`jsonschema` 4.23.0](https://github.com/python-jsonschema/jsonschema/tree/v4.23.0) is MIT-licensed and installed separately. It and its Python dependencies are test tools, not bundled SDK runtime code. The same distinction applies to temporary speech-synthesis evaluations: no voice recording is distributed.
+
+## Maintained token-pasting macro
+
+The tokenizer's compile-time `paste::paste!` import is backed by [pastey 0.2.3](https://crates.io/crates/pastey), licensed MIT OR Apache-2.0. Its notices are in `third-party/pastey/`. A local MIT compatibility facade at `third-party/paste-compat/` preserves that import path and re-exports the maintained macro; it contains no implementation from the archived `paste` crate. All three Cargo workspaces apply this source patch. No advisory is ignored to permit the archived implementation. Tokenization, corpus and acceptance semantics are unchanged.

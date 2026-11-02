@@ -1,4 +1,6 @@
 //! Disk/network/runtime boundary. The pure engine lives in qrk-core.
+mod cache;
+pub use cache::cache_directory;
 use ort::{session::Session, value::Tensor};
 use qrk_core::{
     AcousticModel, AcousticOutput, Config, Corpus, CorpusIndex, Error, Event, Result, Summary,
@@ -56,9 +58,10 @@ impl ModelPack {
         Ok(Self { model_path: path })
     }
     pub fn fetch(cache: Option<&Path>, mut progress: impl FnMut(f64)) -> Result<Self> {
-        let directory = cache
-            .map(Path::to_owned)
-            .unwrap_or_else(|| cache_directory().join(MODEL_RELEASE));
+        let directory = match cache {
+            Some(path) => path.to_owned(),
+            None => cache_directory()?.join(MODEL_RELEASE),
+        };
         if let Ok(pack) = Self::from_directory(&directory) {
             progress(1.);
             return Ok(pack);
@@ -147,11 +150,6 @@ pub fn validate_file(path: &Path, expected_size: u64, expected_sha: &str) -> Res
     }
     Ok(())
 }
-pub fn cache_directory() -> PathBuf {
-    directories::ProjectDirs::from("org", "QuranRecitationKit", "QuranRecitationKit")
-        .map(|p| p.data_local_dir().to_path_buf())
-        .unwrap_or_else(|| std::env::temp_dir().join("QuranRecitationKit"))
-}
 pub fn load_corpus(path: Option<&Path>) -> Result<Arc<CorpusIndex>> {
     let corpus = if let Some(path) = path {
         Corpus::from_json(&fs::read_to_string(path).map_err(failure)?)?
@@ -159,7 +157,7 @@ pub fn load_corpus(path: Option<&Path>) -> Result<Arc<CorpusIndex>> {
         Corpus::bundled()?
     };
     let key = corpus.cache_key();
-    let directory = cache_directory().join("indices");
+    let directory = cache_directory()?.join("indices");
     let cached = directory.join(format!("{key}.json"));
     if let Ok(bytes) = fs::read(&cached) {
         if let Ok(index) = serde_json::from_slice::<CorpusIndex>(&bytes) {
@@ -347,7 +345,7 @@ pub fn load_spot_index(corpus: Arc<CorpusIndex>) -> Result<Arc<qrk_core::SpotInd
         return Ok(value);
     }
     let digest = hex::encode(Sha256::digest(corpus.cache_key.as_bytes()));
-    let directory = cache_directory().join("indices");
+    let directory = cache_directory()?.join("indices");
     let path = directory.join(format!("spot-v1-{digest}.json"));
     let existing = fs::File::open(&path).ok().and_then(|f| {
         let mut b = Vec::new();
@@ -399,7 +397,7 @@ fn embedded_runtime() -> Result<Option<PathBuf>> {
         return Ok(None);
     };
     let sha = hex::encode(Sha256::digest(bytes));
-    let directory = cache_directory().join("runtimes").join(&sha);
+    let directory = cache_directory()?.join("runtimes").join(&sha);
     let library = directory.join(runtime_filename());
     if validate_file(&library, bytes.len() as u64, &sha).is_ok() {
         return Ok(Some(library));

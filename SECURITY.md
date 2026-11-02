@@ -1,11 +1,23 @@
 # Security
 
-Recognition processes audio locally. The engine has no telemetry or account. Optional network surfaces are explicit HTTPS model download and an explicitly started localhost sidecar; no microphone audio is uploaded by the SDK.
+Report vulnerabilities through [GitHub private vulnerability reporting](https://github.com/yvezf/QuranRecitationKit/security/advisories/new), which is enabled for this repository. Include the affected version, platform, minimal reproduction and impact. Keep sensitive reports, recordings and credentials out of public issues. There is no guaranteed response deadline.
 
-Model files are checked against a pinned byte count and SHA-256, independently of the supplied manifest. A filename alone never establishes compatibility. Runtime corpus caches are local to the user and keyed by source/tokenizer/index version. Do not distribute a generated normalized corpus index. Release helpers can embed ONNX Runtime and materialize its verified bytes in the application's local cache.
+## Threat model
 
-The sidecar binds 127.0.0.1, limits message size and concurrent sessions, and supports an Authorization bearer token. Web applications must use an app-controlled helper and token; do not expose it to remote networks. Only trusted application code should call the C ABI or configure model/corpus/runtime paths. C callers own buffer lifetime and must not free an in-use handle. Native callbacks borrow strings only until returning.
+- An untokened localhost helper trusts local processes, including processes belonging to other local users; use `--token` on shared machines. It binds only to 127.0.0.1 and limits sessions/messages. It is not a remote service or a sandbox against a compromised host.
+- Model bytes and embedded runtime bytes are size/SHA-256 verified before use. Cached corpus indexes are checked against the canonical source. The Unix temporary fallback is private (0700), per effective UID, and refuses symlinks, another owner, or group/other access.
+- The SDK makes no outbound requests except an explicit HTTPS model download. Recognition and audio stay local. Explicitly starting the sidecar opens a loopback listener; loading the SDK never starts capture or a listener.
 
-Audio capture is opt-in and subject to OS permissions. Transport errors, overruns, inconclusive audio, and calibration limits must be represented honestly by hosts. Recognition confidence is not a security credential or a calibrated pronunciation judgement.
+Only trusted host code should supply native handles, callbacks, corpus/model/runtime paths or an `ORT_DYLIB_PATH` override. C callers own buffer lifetime, must not free an in-use handle and borrow callback strings only during the call. Capture requires OS permission. Hosts must surface overruns, transport failures and inconclusive results; recognition confidence is not an authentication credential or pronunciation verdict.
 
-Report vulnerabilities privately using the published repository's Security advisory page. No response deadline or external support contact is promised before that repository exists.
+## Supported versions
+
+| Version | Security support |
+|---|---|
+| `main` | Current fixes and security checks |
+| 0.3.x | Reports accepted; fixes are prepared on `main` for the next reviewed release |
+| 0.2.x and older | No separate backport branch; upgrade to the maintained line |
+
+The new cache and dependency hardening on `main` is not retroactively present in the existing 0.3.0 binary assets. Those published bytes remain immutable. See the release notes and verification reports for the exact source/archive revisions. Changing a source tag's documentation does not change a downloaded native archive.
+
+The optional model-export environment is build tooling, not part of the shipped SDK or runtime. Its complete Python dependency graph is audited separately. Updating that environment does not promote or replace a model: a new candidate must pass the export fidelity/recognition gates before publication. Existing model hashes and model assets remain fixed.

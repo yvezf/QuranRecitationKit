@@ -20,6 +20,8 @@ Offline Quran recitation tracking and lecture quotation spotting for your app. T
 | Python 3.9+ | Install an attached platform wheel; [Python guide](bindings/python/README.md) |
 | .NET | Use the attached four-platform `.nupkg` as a local feed; [.NET guide](bindings/dotnet/README.md) |
 
+**Security:** [report a vulnerability privately](https://github.com/yvezf/QuranRecitationKit/security/advisories/new) · [security and supported versions](SECURITY.md) · [benchmark licensing/gate status](docs/SPOT-EVAL-2026-11.md).
+
 ## For transcription and note-taking apps
 
 Feed the same 16 kHz mono PCM as your lecture transcriber to an independent `Spotter`. It emits `quote_detected` with an Arabic span, surah/ayah and word range, timestamps, verbatim Tanzil text and a display reference. The host can propose replacing the overlapping ASR words while retaining the original transcript. Start with `qrk model fetch`, then `qrk spot --wav lecture.wav --json`; microphone capture is explicit with `qrk spot --mic --json`. [Integration guide](docs/SPOTTING.md) · [Verification](docs/SPOTTING-VERIFICATION-2026-11-01.md) · [Python lecture example](examples/python-lecture/README.md) · [Node notes example](examples/node-notes/README.md).

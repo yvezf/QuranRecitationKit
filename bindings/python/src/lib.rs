@@ -19,7 +19,7 @@ impl NativeRecognizer {
     fn new(py: Python<'_>, model_dir: String, config_json: &str) -> PyResult<Self> {
         let cfg: Config =
             serde_json::from_str(config_json).map_err(|e| PyValueError::new_err(e.to_string()))?;
-        py.allow_threads(move || {
+        py.detach(move || {
             Ok(Self {
                 inner: Mutex::new(
                     Recognizer::new(
@@ -35,7 +35,7 @@ impl NativeRecognizer {
     fn set_expected(&self, py: Python<'_>, target_json: &str) -> PyResult<()> {
         let target =
             Target::from_json(target_json).map_err(|e| PyValueError::new_err(e.to_string()))?;
-        py.allow_threads(|| {
+        py.detach(|| {
             self.inner
                 .lock()
                 .map_err(error)?
@@ -49,18 +49,18 @@ impl NativeRecognizer {
                 "feed expects at most 60 seconds of finite mono 16 kHz samples",
             ));
         }
-        py.allow_threads(|| {
+        py.detach(|| {
             serde_json::to_string(&self.inner.lock().map_err(error)?.feed(&pcm16k)).map_err(error)
         })
     }
     fn stop(&self, py: Python<'_>) -> PyResult<String> {
-        py.allow_threads(|| {
+        py.detach(|| {
             serde_json::to_string(&self.inner.lock().map_err(error)?.stop().map_err(error)?)
                 .map_err(error)
         })
     }
     fn reset(&self, py: Python<'_>) -> PyResult<()> {
-        py.allow_threads(|| {
+        py.detach(|| {
             self.inner.lock().map_err(error)?.reset();
             Ok(())
         })
@@ -73,7 +73,7 @@ fn version() -> &'static str {
 #[pyfunction]
 #[pyo3(signature=(cache_dir=None))]
 fn model_fetch(py: Python<'_>, cache_dir: Option<String>) -> PyResult<String> {
-    py.allow_threads(|| {
+    py.detach(|| {
         ModelPack::fetch(cache_dir.as_deref().map(std::path::Path::new), |_| {})
             .map(|p| {
                 p.model_path
@@ -106,7 +106,7 @@ impl NativeSpotter {
     fn new(py: Python<'_>, model_dir: String, config_json: &str) -> PyResult<Self> {
         let config: qrk_core::SpotConfig =
             serde_json::from_str(config_json).map_err(|e| PyValueError::new_err(e.to_string()))?;
-        py.allow_threads(move || {
+        py.detach(move || {
             Ok(Self {
                 inner: Mutex::new(
                     qrk_onnx::Spotter::new(
@@ -120,7 +120,7 @@ impl NativeSpotter {
         })
     }
     fn feed(&self, py: Python<'_>, pcm16k: Vec<f32>) -> PyResult<String> {
-        py.allow_threads(|| {
+        py.detach(|| {
             serde_json::to_string(
                 &self
                     .inner
@@ -133,13 +133,13 @@ impl NativeSpotter {
         })
     }
     fn stop(&self, py: Python<'_>) -> PyResult<String> {
-        py.allow_threads(|| {
+        py.detach(|| {
             serde_json::to_string(&self.inner.lock().map_err(error)?.stop().map_err(error)?)
                 .map_err(error)
         })
     }
     fn reset(&self, py: Python<'_>) -> PyResult<()> {
-        py.allow_threads(|| {
+        py.detach(|| {
             self.inner.lock().map_err(error)?.reset();
             Ok(())
         })
@@ -147,7 +147,7 @@ impl NativeSpotter {
 }
 #[pyfunction]
 fn match_text_json(py: Python<'_>, segment: String) -> PyResult<String> {
-    py.allow_threads(|| {
+    py.detach(|| {
         serde_json::to_string(&qrk_onnx::match_text(&segment).map_err(error)?).map_err(error)
     })
 }

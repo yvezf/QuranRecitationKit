@@ -7,9 +7,9 @@ license.workspace = true
 name = "qrk"
 path = "src/main.rs"
 [dependencies]
-qrk-core = { path = "../qrk-core" }
-qrk-onnx = { path = "../qrk-onnx" }
-qrk-audio = { path = "../qrk-audio" }
+qrk-core = { version = "0.3", path = "../qrk-core" }
+qrk-onnx = { version = "0.3", path = "../qrk-onnx" }
+qrk-audio = { version = "0.3", path = "../qrk-audio" }
 serde.workspace = true
 serde_json.workspace = true
 clap = { version = "4", features = ["derive", "env"] }

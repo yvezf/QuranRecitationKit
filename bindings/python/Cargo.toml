@@ -7,7 +7,11 @@ license = "MIT"
 name = "_native"
 crate-type = ["cdylib"]
 [dependencies]
-pyo3 = { version = "0.23", features = ["extension-module", "abi3-py39"] }
-qrk-core = { path = "../../core/qrk-core" }
-qrk-onnx = { path = "../../core/qrk-onnx" }
+pyo3 = { version = "0.29", features = ["extension-module", "abi3-py39"] }
+qrk-core = { version = "0.3", path = "../../core/qrk-core" }
+qrk-onnx = { version = "0.3", path = "../../core/qrk-onnx" }
 serde_json = "1"
+
+[patch.crates-io]
+# Keep the tokenizer API while replacing its archived compile-time macro backend.
+paste = { path = "../../third-party/paste-compat" }

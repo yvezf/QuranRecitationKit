@@ -1,0 +1,10 @@
+[package]
+name = "paste"
+version = "1.0.16"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "Local compatibility facade backed entirely by the maintained pastey macro"
+
+[dependencies]
+pastey = "=0.2.3"

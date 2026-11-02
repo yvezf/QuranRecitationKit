@@ -48,6 +48,7 @@ char *qrk_model_source_json(void);
 
 /**
  * Owned UTF-8 platform cache directory. Free with qrk_string_free.
+ * Returns null and sets qrk_last_error if a safe fallback cannot be prepared.
  */
 char *qrk_cache_directory(void);
 

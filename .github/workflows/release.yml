@@ -20,7 +20,7 @@ jobs:
     outputs:
       build: ${{ steps.pin.outputs.build }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - id: pin
         env: {GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}'}
         run: python3 tools/release_preflight.py '${{ inputs.release_tag || github.ref_name }}'
@@ -38,11 +38,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     env: {MACOSX_DEPLOYMENT_TARGET: '14.0', DOTNET_CLI_TELEMETRY_OPTOUT: '1'}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with: {python-version: '3.11'}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with: {node-version: '22'}
       - if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libasound2-dev pkg-config
@@ -63,7 +63,7 @@ jobs:
       - run: python tools/package_python.py
       - run: maturin build --manifest-path bindings/python/Cargo.toml --release --locked --out dist/wheels
       - run: python tools/package_dotnet.py --rid ${{ matrix.dotnet }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: native-${{ matrix.rid }}
           path: |
@@ -75,30 +75,30 @@ jobs:
     if: needs.prepare.outputs.build == 'true'
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with: {targets: 'aarch64-apple-darwin,x86_64-apple-darwin,aarch64-apple-ios,aarch64-apple-ios-sim,x86_64-apple-ios'}
       - run: python3 tools/build_xcframework.py
       - run: swift test --package-path bindings/swift
       - run: python3 tools/check_swift_dependency.py
       - run: python3 tools/package_swift.py
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with: {name: swift, path: 'dist/QRKFFI.xcframework.zip*'}
   publish:
     needs: [prepare, native, swift]
     runs-on: ubuntu-22.04
     permissions: {contents: write}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with: {dotnet-version: '8.0.x'}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with: {path: artifacts}
       - name: Collect native runtimes and pack NuGet
         run: |
           find artifacts -path '*/runtimes/*' -type f | while read f; do suffix="${f#*/runtimes/}"; mkdir -p "bindings/dotnet/runtimes/$(dirname "$suffix")"; cp "$f" "bindings/dotnet/runtimes/$suffix"; done
           python3 tools/package_dotnet.py --pack
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with: {name: aggregate-nuget, path: 'dist/*.nupkg'}
       - name: Attach archives to a draft release
         if: inputs.build_only != true

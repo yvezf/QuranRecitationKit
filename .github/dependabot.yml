@@ -1,0 +1,26 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: {interval: weekly}
+  - package-ecosystem: cargo
+    directory: /core
+    schedule: {interval: weekly}
+  - package-ecosystem: cargo
+    directory: /bindings/node/native
+    schedule: {interval: weekly}
+  - package-ecosystem: cargo
+    directory: /bindings/python
+    schedule: {interval: weekly}
+  - package-ecosystem: npm
+    directory: /bindings/node
+    schedule: {interval: weekly}
+  - package-ecosystem: pip
+    directory: /bindings/python
+    schedule: {interval: weekly}
+  - package-ecosystem: pip
+    directory: /model/export
+    schedule: {interval: weekly}
+  - package-ecosystem: nuget
+    directory: /bindings/dotnet/QuranRecitationKit
+    schedule: {interval: weekly}

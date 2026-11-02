@@ -43,15 +43,13 @@ public struct ModelPack: Sendable {
         progress: (@Sendable (Double) -> Void)? = nil) async throws -> ModelPack {
         guard source.sha256 == ModelInfo.current.sha256, source.byteCount == ModelInfo.current.byte_count, source.url.scheme == "https" else { throw ModelPackError.incompatibleManifest }
         if source.url == ModelSource.default.url && !ModelInfo.current.configured { throw ModelPackError.repositoryNotConfigured }
-        let defaultRoot: URL
-        if let directory = ModelInfo.current.cache_directory {
-            defaultRoot = URL(fileURLWithPath: directory, isDirectory: true)
-        } else {
-            // Compatibility with older native archives: derive their tag from their URL.
+        let root: URL
+        if let cache { root = cache }
+        else {
+            // Revalidate the native cache on every use rather than trusting cached metadata.
             let release = URL(string: ModelInfo.current.url)!.deletingLastPathComponent().lastPathComponent
-            defaultRoot = URL(fileURLWithPath: try ownedString(qrk_cache_directory()), isDirectory: true).appendingPathComponent(release)
+            root = URL(fileURLWithPath: try ownedString(qrk_cache_directory()), isDirectory: true).appendingPathComponent(release)
         }
-        let root = cache ?? defaultRoot
         return try await ModelDownloads.shared.load(source, root, progress)
     }
 }

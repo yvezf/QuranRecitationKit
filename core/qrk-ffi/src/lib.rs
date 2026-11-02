@@ -74,18 +74,24 @@ pub extern "C" fn qrk_model_source_json() -> *mut c_char {
     CString::new(serde_json::json!({
         "url":qrk_onnx::model_source_url(),
         "model_release":qrk_onnx::MODEL_RELEASE,
-        "cache_directory":qrk_onnx::cache_directory().join(qrk_onnx::MODEL_RELEASE).to_string_lossy(),
+        "cache_directory":qrk_onnx::cache_directory().ok().map(|p| p.join(qrk_onnx::MODEL_RELEASE).to_string_lossy().into_owned()),
         "configured":!qrk_onnx::REPOSITORY_OWNER.starts_with('<'),
         "sha256":qrk_onnx::MODEL_SHA256,"byte_count":qrk_onnx::MODEL_BYTES,
         "manifest":serde_json::from_str::<serde_json::Value>(qrk_onnx::MODEL_MANIFEST).unwrap()
     }).to_string()).unwrap().into_raw()
 }
 /// Owned UTF-8 platform cache directory. Free with qrk_string_free.
+/// Returns null and sets qrk_last_error if a safe fallback cannot be prepared.
 #[no_mangle]
 pub extern "C" fn qrk_cache_directory() -> *mut c_char {
-    CString::new(qrk_onnx::cache_directory().to_string_lossy().as_ref())
-        .unwrap()
-        .into_raw()
+    let mut value = std::ptr::null_mut();
+    status(|| {
+        value = CString::new(qrk_onnx::cache_directory()?.to_string_lossy().as_ref())
+            .map_err(|e| Error::Invalid(e.to_string()))?
+            .into_raw();
+        Ok(())
+    });
+    value
 }
 /// Verbatim, attributed Arabic corpus for host display. No normalized index. Free with qrk_string_free.
 #[no_mangle]
@@ -284,7 +290,9 @@ mod tests {
             source["manifest"]["model"]["sha256"],
             qrk_onnx::MODEL_SHA256
         );
-        let cache = qrk_onnx::cache_directory().join(qrk_onnx::MODEL_RELEASE);
+        let cache = qrk_onnx::cache_directory()
+            .unwrap()
+            .join(qrk_onnx::MODEL_RELEASE);
         assert_eq!(source["cache_directory"], cache.to_string_lossy().as_ref());
     }
     #[test]
