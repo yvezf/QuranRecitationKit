@@ -9,5 +9,5 @@ serde_json.workspace = true
 thiserror.workspace = true
 sha2.workspace = true
 hex.workspace = true
-tokenizers = { version = "=0.22.2", default-features = false, features = ["fancy-regex"] }
+tokenizers = { version = "=0.23.2", default-features = false, features = ["fancy-regex"] }
 unicode_categories = "0.1"
