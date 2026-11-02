@@ -11,7 +11,7 @@ The other 24 proposals were closed with one-line reasons:
 | PRs | Reason |
 |---|---|
 | #1 | Superseded by the validated datasets 5.1.0 pin already on main |
-| #2, #3, #20 | ONNX/Torch/ONNX Runtime export changes need independent model fidelity validation |
+| #2, #3, #20, #23 | ONNX/Torch/ONNX Runtime export or inference changes need independent fidelity/compatibility validation |
 | #5, #7, #12, #18, #22 | Major Action/runtime upgrades need dedicated workflow/release compatibility review |
 | #6, #10 | Major Node native-binding updates fail required checks |
 | #8, #15 | Tokenizer changes can change the runtime index and recognition decisions |
