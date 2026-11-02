@@ -56,7 +56,7 @@ The Linux CLI needs ALSA runtime libraries. Windows may need Microsoft's current
 
 ### macOS browser downloads and Gatekeeper
 
-Desktop binaries are ad-hoc signed, **not Developer-ID signed or notarized**. After verifying the release source and checksums, a browser-downloaded archive may require removing quarantine from these specific extracted files:
+Desktop binaries are **not Developer-ID signed or notarized**. Any ad-hoc build signature does not establish an identified developer. After verifying the release source and checksums, a browser-downloaded archive may require removing quarantine from these specific extracted files:
 
 ```sh
 xattr -d com.apple.quarantine qrk libqrk.dylib
@@ -211,4 +211,4 @@ Tests need no audio. Set `QRK_MODEL_DIR` for native inference tests and `QRK_PAR
 
 ## License
 
-Project code: MIT, Yousef Alabadi. Portions derive from yazinsai's Tilawa MIT source pin, distinct from its v0.2.1 model release. NVIDIA weights/tokenizer: CC BY 4.0. Tanzil Arabic: CC BY 3.0 with additional verbatim-text conditions. Runtime and binding dependencies retain their notices. Carry [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), `third-party/`, and the corpus notice with redistribution.
+Project code: MIT, Yousef Alabadi. Portions derive from yazinsai's Tilawa MIT source commit `ec5cdc72c1c48ba29866ca2e3197d6b9a0e2e793`; later upstream model terms are separate. NVIDIA weights/tokenizer: CC BY 4.0. Tanzil Arabic: CC BY 3.0 with additional verbatim-text conditions. Runtime and binding dependencies retain their notices. Carry [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), `third-party/`, and the corpus notice with redistribution.
