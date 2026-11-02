@@ -1556,7 +1556,7 @@ dependencies = [
 name = "qrk-cli"
 version = "0.3.0"
 dependencies = [
- "base64 0.22.1",
+ "base64 0.23.1",
  "clap",
  "futures-util",
  "hound",
