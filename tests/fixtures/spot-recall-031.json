@@ -1,0 +1,32 @@
+{
+  "frame_samples": 1280,
+  "seed": 3101,
+  "backward_seed": {
+    "surah": 78,
+    "ayah_from": 1,
+    "ayah_to": 2,
+    "origin_seconds": 6,
+    "window_seconds": 8,
+    "leading_frames": 5,
+    "token_frames": 5,
+    "blank_frames": 1,
+    "gap_frames": 8,
+    "misdecoded_first_piece": "▁كل",
+    "misdecoded_continuation_piece": "ك"
+  },
+  "short_ayah": {
+    "surah": 78,
+    "ayah": 1,
+    "origin_seconds": 21,
+    "leading_frames": 13,
+    "token_frames": 4,
+    "blank_frames": 1,
+    "windows_seconds": [
+      6,
+      8,
+      12
+    ],
+    "trailing_nonlexical_piece": ".",
+    "blank_penalty": 0.3
+  }
+}

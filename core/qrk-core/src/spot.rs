@@ -1,6 +1,8 @@
 //! Open-set retrieval → scoped CTC rerank, following Tilawa's MIT two-stage design.
 //! Search indices are runtime data; display text is sliced from verbatim Tanzil.
-use crate::{ctc, text, AcousticModel, CorpusIndex, Error, Event, Result, State, Summary};
+use crate::{
+    ctc, text, AcousticModel, AcousticOutput, CorpusIndex, Error, Event, Result, State, Summary,
+};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap, VecDeque},
@@ -719,7 +721,7 @@ impl<M: AcousticModel> Spotter<M> {
             &self.pieces,
             1024,
         )?;
-        let emissions = ctc::word_emissions(&decoded.frames, &self.pieces, 1024);
+        let emissions = word_emissions_for_spotting(&decoded.frames, &self.pieces);
         // The acoustic word frontier supplements energy-based silence, so quiet
         // but intelligible recitation is not closed solely by a fixed RMS floor.
         if let Some(last) = emissions.last() {
@@ -777,88 +779,9 @@ impl<M: AcousticModel> Spotter<M> {
             if h.span.is_empty() {
                 continue;
             }
-            let first = &emissions[h.query.start];
-            let last = &emissions[h.query.end - 1];
-            let range = first.start.saturating_sub(2)..(last.end + 2).min(output.time);
-            let time = range.len();
-            let rows = &output.logits[range.start * output.vocab..range.end * output.vocab];
-            let sequences = self.index.tokens(h.span.clone());
-            let best = sequences
-                .iter()
-                .filter_map(|t| {
-                    ctc::score(rows, time, output.vocab, t, 1024)
-                        .ok()
-                        .map(|s| (s, t))
-                })
-                .max_by(|a, b| a.0.total_cmp(&b.0));
-            let Some((score, tokens)) = best else {
-                continue;
-            };
-            let mut negative = ctc::score(rows, time, output.vocab, &[], 1024)?;
-            let first_word = &self.index.words[h.span.start];
-            let verse = &self.index.corpus.verses[first_word.verse];
-            let mut competitors = verse.confusers.clone();
-            competitors.extend(
-                first_word.verse.saturating_sub(2)
-                    ..(first_word.verse + 3).min(self.index.corpus.verses.len()),
-            );
-            if h.span.len() == 1 {
-                competitors.extend(
-                    self.index
-                        .corpus
-                        .verses
-                        .iter()
-                        .enumerate()
-                        .filter(|(_, v)| v.words.len() == 1)
-                        .map(|(i, _)| i),
-                );
+            if let Some(candidate) = self.score_hit(h, &emissions, &output, input.len(), origin)? {
+                scored.push(candidate);
             }
-            competitors.sort_unstable();
-            competitors.dedup();
-            for vi in competitors {
-                let t = &self.index.corpus.verses[vi].tokens;
-                if sequences.contains(t) {
-                    continue;
-                }
-                if let Ok(s) = ctc::score(rows, time, output.vocab, t, 1024) {
-                    negative = negative.max(s);
-                }
-            }
-            let margin = score - negative;
-            if margin < self.cfg.min_margin {
-                continue;
-            }
-            let aligned = ctc::forced_alignment(rows, time, output.vocab, tokens, 1024)?;
-            let start =
-                origin + frame_seconds(range.start + aligned[0].0, input.len(), output.time);
-            let end = origin
-                + frame_seconds(
-                    range.start + aligned.last().unwrap().1,
-                    input.len(),
-                    output.time,
-                );
-            let distinct = self.index.words[h.span.clone()]
-                .iter()
-                .map(|w| w.key.as_str())
-                .collect::<BTreeSet<_>>()
-                .len();
-            let last_word = &self.index.words[h.span.end - 1];
-            let short = first_word.verse == last_word.verse
-                && first_word.local == 0
-                && last_word.local + 1 == verse.words.len()
-                && !verse.words.is_empty()
-                && margin >= self.cfg.high_margin;
-            if end - start < self.cfg.min_seconds {
-                continue;
-            }
-            scored.push(Scored {
-                hit: h,
-                margin,
-                score,
-                eligible: distinct >= self.cfg.min_words || short,
-                start,
-                end,
-            });
         }
         if scored.is_empty()
             && self
@@ -908,6 +831,11 @@ impl<M: AcousticModel> Spotter<M> {
                     remaining.push(other);
                 }
             }
+            let best = if alternatives.is_empty() {
+                self.extend_backwards(best, &emissions, &output, input.len(), origin)?
+            } else {
+                best
+            };
             self.observe(best, &alternatives);
             scored = remaining;
         }
@@ -915,6 +843,176 @@ impl<M: AcousticModel> Spotter<M> {
             self.close();
         }
         Ok(())
+    }
+    fn score_hit(
+        &self,
+        h: Hit,
+        emissions: &[ctc::WordEmission],
+        output: &AcousticOutput,
+        samples: usize,
+        origin: f64,
+    ) -> Result<Option<Scored>> {
+        if h.span.is_empty() || h.query.is_empty() || h.query.end > emissions.len() {
+            return Ok(None);
+        }
+        let first = &emissions[h.query.start];
+        let last = &emissions[h.query.end - 1];
+        let range = first.start.saturating_sub(2)..(last.end + 2).min(output.time);
+        let time = range.len();
+        let rows = &output.logits[range.start * output.vocab..range.end * output.vocab];
+        let sequences = self.index.tokens(h.span.clone());
+        let best = sequences
+            .iter()
+            .filter_map(|t| {
+                ctc::score(rows, time, output.vocab, t, 1024)
+                    .ok()
+                    .map(|s| (s, t))
+            })
+            .max_by(|a, b| a.0.total_cmp(&b.0));
+        let Some((score, tokens)) = best else {
+            return Ok(None);
+        };
+        let mut negative = ctc::score(rows, time, output.vocab, &[], 1024)?;
+        let first_word = &self.index.words[h.span.start];
+        let verse = &self.index.corpus.verses[first_word.verse];
+        let mut competitors = verse.confusers.clone();
+        competitors.extend(
+            first_word.verse.saturating_sub(2)
+                ..(first_word.verse + 3).min(self.index.corpus.verses.len()),
+        );
+        if h.span.len() == 1 {
+            competitors.extend(
+                self.index
+                    .corpus
+                    .verses
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, v)| v.words.len() == 1)
+                    .map(|(i, _)| i),
+            );
+        }
+        competitors.sort_unstable();
+        competitors.dedup();
+        for vi in competitors {
+            let t = &self.index.corpus.verses[vi].tokens;
+            if sequences.contains(t) {
+                continue;
+            }
+            if let Ok(s) = ctc::score(rows, time, output.vocab, t, 1024) {
+                negative = negative.max(s);
+            }
+        }
+        let margin = score - negative;
+        if margin < self.cfg.min_margin {
+            return Ok(None);
+        }
+        let aligned = ctc::forced_alignment(rows, time, output.vocab, tokens, 1024)?;
+        let start = origin + frame_seconds(range.start + aligned[0].0, samples, output.time);
+        let end = origin
+            + frame_seconds(
+                range.start + aligned.last().unwrap().1,
+                samples,
+                output.time,
+            );
+        let distinct = self.index.words[h.span.clone()]
+            .iter()
+            .map(|w| w.key.as_str())
+            .collect::<BTreeSet<_>>()
+            .len();
+        let last_word = &self.index.words[h.span.end - 1];
+        let short = first_word.verse == last_word.verse
+            && first_word.local == 0
+            && last_word.local + 1 == verse.words.len()
+            && !verse.words.is_empty()
+            && margin >= self.cfg.high_margin;
+        if end - start < self.cfg.min_seconds {
+            return Ok(None);
+        }
+        Ok(Some(Scored {
+            hit: h,
+            margin,
+            score,
+            eligible: distinct >= self.cfg.min_words || short,
+            start,
+            end,
+        }))
+    }
+    fn extend_backwards(
+        &self,
+        seed: Scored,
+        emissions: &[ctc::WordEmission],
+        output: &AcousticOutput,
+        samples: usize,
+        origin: f64,
+    ) -> Result<Scored> {
+        let first = &self.index.words[seed.hit.span.start];
+        let verse = &self.index.corpus.verses[first.verse];
+        // Restore the beginning of a partially retrieved ayah, or inspect only
+        // the immediately preceding ayah of the same surah. Never infer a
+        // predecessor from its reference alone.
+        let vi = if first.local > 0 {
+            first.verse
+        } else if verse.ayah > 1 && first.verse > 0 {
+            first.verse - 1
+        } else {
+            return Ok(seed);
+        };
+        let previous = &self.index.corpus.verses[vi];
+        if previous.surah != verse.surah {
+            return Ok(seed);
+        }
+        let from = self.index.starts[vi];
+        let to = from + previous.words.len();
+        if to > seed.hit.span.end {
+            return Ok(seed);
+        }
+        let missing = seed.hit.span.start - from;
+        let Some(query_from) = seed.hit.query.start.checked_sub(missing) else {
+            return Ok(seed);
+        };
+        let query_to = query_from + previous.words.len();
+        if query_to > emissions.len() {
+            return Ok(seed);
+        }
+        let prefix = Hit {
+            span: from..to,
+            query: query_from..query_to,
+            strength: seed.hit.strength,
+        };
+        let Some(checked) = self.score_hit(prefix, emissions, output, samples, origin)? else {
+            return Ok(seed);
+        };
+        // The new ayah must pass the existing duration, margin and complete-
+        // short-ayah gates by itself; a strong seed cannot subsidize weak audio.
+        if !checked.eligible
+            || self.closed_spans.iter().any(|(span, start, end)| {
+                span.start < to
+                    && from < span.end
+                    && checked.start <= *end + 0.4
+                    && checked.end >= *start - 0.4
+            })
+        {
+            return Ok(seed);
+        }
+        let joint = Hit {
+            span: from..seed.hit.span.end,
+            query: query_from..seed.hit.query.end,
+            strength: seed.hit.strength,
+        };
+        let Some(extended) = self.score_hit(joint, emissions, output, samples, origin)? else {
+            return Ok(seed);
+        };
+        if extended.eligible
+            && extended.start <= checked.start + 0.25
+            && extended.end >= seed.end - 0.25
+        {
+            Ok(Scored {
+                margin: extended.margin.min(seed.margin).min(checked.margin),
+                ..extended
+            })
+        } else {
+            Ok(seed)
+        }
     }
     fn observe(&mut self, best: Scored, others: &[Scored]) {
         let ambiguous = !others.is_empty();
@@ -1009,7 +1107,11 @@ impl<M: AcousticModel> Spotter<M> {
                 && self.index.same_surah(open.span.start, best.hit.span.start)
                 && best.hit.span.start <= open.span.end
                 && open.span.start <= best.hit.span.end
-                && temporal_overlap(&open.quote, &quote);
+                && (temporal_overlap(&open.quote, &quote)
+                    || ((best.hit.span.start == open.span.end
+                        || best.hit.span.end == open.span.start)
+                        && quote.start_seconds <= open.quote.end_seconds + 1.2
+                        && open.quote.start_seconds <= quote.end_seconds + 1.2));
             if compatible {
                 open.span =
                     open.span.start.min(best.hit.span.start)..open.span.end.max(best.hit.span.end);
@@ -1072,6 +1174,26 @@ impl<M: AcousticModel> Spotter<M> {
             ..Default::default()
         })
     }
+}
+fn word_emissions_for_spotting(frames: &[u32], pieces: &[String]) -> Vec<ctc::WordEmission> {
+    ctc::word_emissions(frames, pieces, 1024)
+        .into_iter()
+        .filter_map(|mut word| {
+            let lexical = |id: &u32| {
+                *id != 1024
+                    && pieces.get(*id as usize).is_some_and(|p| {
+                        p != "<unk>" && p != "<blank>" && !text::letters(p).is_empty()
+                    })
+            };
+            let original = word.start;
+            let range = &frames[word.start..word.end];
+            let first = range.iter().position(lexical)?;
+            let last = range.iter().rposition(lexical)?;
+            word.start = original + first;
+            word.end = original + last + 1;
+            Some(word)
+        })
+        .collect()
 }
 pub fn frame_seconds(frame: usize, samples: usize, frames: usize) -> f64 {
     frame.min(frames) as f64 * samples as f64 / (frames.max(1) as f64 * RATE as f64)
@@ -1368,3 +1490,6 @@ mod tests {
         assert!(q[0].candidates.len() >= 2);
     }
 }
+
+#[cfg(test)]
+mod recall_tests;

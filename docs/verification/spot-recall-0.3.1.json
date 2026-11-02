@@ -1,0 +1,83 @@
+{
+  "method": "identical synthetic posteriors, runtime corpus/tokenizer, unchanged acceptance thresholds",
+  "classroom_precision_recall": "unmeasured",
+  "cases": [
+    {
+      "case": "adjacent_verified_quotes",
+      "window_seconds": 8,
+      "expected": 2,
+      "before_matched": 2,
+      "after_matched": 2,
+      "before_false_positives": 0,
+      "after_false_positives": 0,
+      "before_events": 2,
+      "after_events": 1
+    },
+    {
+      "case": "backward_seed",
+      "window_seconds": 8,
+      "expected": 2,
+      "before_matched": 1,
+      "after_matched": 2,
+      "before_false_positives": 0,
+      "after_false_positives": 0,
+      "before_events": 1,
+      "after_events": 1
+    },
+    {
+      "case": "inaudible_prefix",
+      "window_seconds": 8,
+      "expected": 1,
+      "before_matched": 1,
+      "after_matched": 1,
+      "before_false_positives": 0,
+      "after_false_positives": 0,
+      "before_events": 1,
+      "after_events": 1
+    },
+    {
+      "case": "short_ayah_tail",
+      "window_seconds": 6,
+      "expected": 1,
+      "before_matched": 1,
+      "after_matched": 1,
+      "before_false_positives": 0,
+      "after_false_positives": 0,
+      "before_events": 1,
+      "after_events": 1
+    },
+    {
+      "case": "short_ayah_tail",
+      "window_seconds": 8,
+      "expected": 1,
+      "before_matched": 1,
+      "after_matched": 1,
+      "before_false_positives": 0,
+      "after_false_positives": 0,
+      "before_events": 1,
+      "after_events": 1
+    },
+    {
+      "case": "short_ayah_tail",
+      "window_seconds": 12,
+      "expected": 1,
+      "before_matched": 0,
+      "after_matched": 1,
+      "before_false_positives": 0,
+      "after_false_positives": 0,
+      "before_events": 0,
+      "after_events": 1
+    },
+    {
+      "case": "streaming_backward_seed",
+      "window_seconds": 8,
+      "expected": 2,
+      "before_matched": 1,
+      "after_matched": 2,
+      "before_false_positives": 0,
+      "after_false_positives": 0,
+      "before_events": 1,
+      "after_events": 1
+    }
+  ]
+}
