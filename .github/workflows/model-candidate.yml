@@ -37,7 +37,7 @@ jobs:
         run: |
           gh release download model-v1 --pattern fastconformer_full_mixed.onnx --dir baseline
           python model/export/check_parity.py --v1 baseline/fastconformer_full_mixed.onnx --v2 candidate/candidate-mixed.onnx --report candidate/raw-decoder-compatibility.json --report-only
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: model-export-receipts
@@ -45,14 +45,14 @@ jobs:
             candidate/*.json
             candidate/*.txt
             candidate/*.log
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: clean-model-v2-candidate
           path: |
             candidate/candidate-mixed.onnx
             candidate/candidate.json
             candidate/source.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with: {name: failed-fp32-export-debug, path: candidate/full-precision.onnx}
   native-decisions:
@@ -89,7 +89,7 @@ jobs:
           runner=core/target/release/examples/validate_model
           if [[ "${{ runner.os }}" == "Windows" ]]; then runner="${runner}.exe"; fi
           "$runner" --baseline baseline --candidate candidate --report native-validation.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: model-validation-${{ matrix.os }}
