@@ -2,25 +2,36 @@ version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
-    schedule: {interval: weekly}
+    schedule: {interval: weekly, day: monday, time: '09:00', timezone: America/New_York}
+    open-pull-requests-limit: 1
+    groups:
+      weekly-actions: {applies-to: version-updates, patterns: ['*']}
+      security-actions: {applies-to: security-updates, patterns: ['*']}
   - package-ecosystem: cargo
-    directory: /core
-    schedule: {interval: weekly}
-  - package-ecosystem: cargo
-    directory: /bindings/node/native
-    schedule: {interval: weekly}
-  - package-ecosystem: cargo
-    directory: /bindings/python
-    schedule: {interval: weekly}
+    directories: [/core, /bindings/node/native, /bindings/python]
+    schedule: {interval: weekly, day: monday, time: '09:00', timezone: America/New_York}
+    open-pull-requests-limit: 1
+    groups:
+      weekly-cargo: {applies-to: version-updates, patterns: ['*']}
+      security-cargo: {applies-to: security-updates, patterns: ['*']}
   - package-ecosystem: npm
     directory: /bindings/node
-    schedule: {interval: weekly}
+    schedule: {interval: weekly, day: monday, time: '09:00', timezone: America/New_York}
+    open-pull-requests-limit: 1
+    groups:
+      weekly-npm: {applies-to: version-updates, patterns: ['*']}
+      security-npm: {applies-to: security-updates, patterns: ['*']}
   - package-ecosystem: pip
-    directory: /bindings/python
-    schedule: {interval: weekly}
-  - package-ecosystem: pip
-    directory: /model/export
-    schedule: {interval: weekly}
+    directories: [/bindings/python, /model/export]
+    schedule: {interval: weekly, day: monday, time: '09:00', timezone: America/New_York}
+    open-pull-requests-limit: 1
+    groups:
+      weekly-pip: {applies-to: version-updates, patterns: ['*']}
+      security-pip: {applies-to: security-updates, patterns: ['*']}
   - package-ecosystem: nuget
     directory: /bindings/dotnet/QuranRecitationKit
-    schedule: {interval: weekly}
+    schedule: {interval: weekly, day: monday, time: '09:00', timezone: America/New_York}
+    open-pull-requests-limit: 1
+    groups:
+      weekly-nuget: {applies-to: version-updates, patterns: ['*']}
+      security-nuget: {applies-to: security-updates, patterns: ['*']}
