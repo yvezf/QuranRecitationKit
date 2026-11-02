@@ -7,7 +7,7 @@ Offline Quran recitation tracking for your app. Supply the passage you expect an
 
 **One Rust engine. C ABI. Swift, Node, Python and .NET bindings. Local WebSocket/stdio helper.** Native CI passed on macOS arm64/x64, Windows x64 and Linux x64, including the public model download and actual ONNX inference. The iOS SwiftUI example also builds. [Releases](https://github.com/yvezf/QuranRecitationKit/releases/tag/v0.2.0) · [Model](https://github.com/yvezf/QuranRecitationKit/releases/tag/model-v2) · [Publication verification](docs/PUBLICATION-2026-11-01.md).
 
-**v0.2.0 uses the clean, directly exported NVIDIA model-v2.** All bindings use the native core's pinned model metadata and a versioned cache. [Validation and known limits](model/export/STATUS-2026-11-01.md).
+**v0.2.0 uses the clean, directly exported NVIDIA model-v2.** All bindings use the native core's pinned model metadata and a versioned cache. [Validation and known limits](model/export/STATUS-2026-11-01.md) · [SDK/consumer verification](docs/MODEL-V2-RELEASE-2026-11-01.md).
 
 ## Pick your door
 
