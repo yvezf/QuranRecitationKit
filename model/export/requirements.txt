@@ -1,6 +1,6 @@
 # CPU export environment; resolved versions are emitted with each candidate artifact.
 nemo_toolkit[asr]==2.4.0
-torch==2.7.1
+torch==2.13.0
 onnx==1.18.0
 onnxruntime==1.24.2
 onnxscript==0.3.2
