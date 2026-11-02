@@ -9,7 +9,7 @@ onnx==1.23.2
 onnxruntime==1.24.2
 onnxscript==0.7.2
 onnx-ir==1.1.0
-numpy==2.3.5
+numpy==2.5.4
 pyarrow==26.0.0
 datasets==5.1.0
 peft==0.21.2
