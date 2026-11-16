@@ -19,6 +19,6 @@
     "test": "node --test test/*.test.cjs"
   },
   "dependencies": {
-    "ws": "^8.18.0"
+    "ws": "^8.23.0"
   }
 }
