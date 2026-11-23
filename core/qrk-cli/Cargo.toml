@@ -14,7 +14,7 @@ serde.workspace = true
 serde_json.workspace = true
 clap = { version = "4", features = ["derive", "env"] }
 tokio = { version = "1", features = ["full"] }
-tokio-tungstenite = "0.28"
+tokio-tungstenite = "0.30"
 futures-util = "0.3"
 hound = "3.5"
 
