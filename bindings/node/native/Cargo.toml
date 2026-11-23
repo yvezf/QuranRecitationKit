@@ -6,8 +6,8 @@ license = "MIT"
 [lib]
 crate-type = ["cdylib"]
 [dependencies]
-napi = { version = "2.16", default-features = false, features = ["napi6", "async"] }
-napi-derive = "2.16"
+napi = { version = "3.16", default-features = false, features = ["napi6", "async"] }
+napi-derive = "3.7"
 qrk-core = { version = "0.3", path = "../../../core/qrk-core" }
 qrk-onnx = { version = "0.3", path = "../../../core/qrk-onnx" }
 serde_json = "1"
